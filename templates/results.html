@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PNL Tools - Results</title>
+    <style>
+        body {
+            font-family: 'MS Sans Serif', Arial, sans-serif;
+            background-color: #008080;
+            margin: 0;
+            padding: 20px;
+            font-size: 11px;
+        }
+        .window {
+            background-color: #c0c0c0;
+            border: 2px solid;
+            border-color: #ffffff #000000 #000000 #ffffff;
+            max-width: 95%;
+            margin: 20px auto;
+            box-shadow: 2px 2px 0px #000000;
+        }
+        .title-bar {
+            background: linear-gradient(90deg, #000080, #1084d0);
+            color: white;
+            padding: 3px 5px;
+            font-weight: bold;
+        }
+        .window-body {
+            padding: 15px;
+            background-color: #c0c0c0;
+        }
+        .graph-container {
+            background-color: #ffffff;
+            border: 2px solid;
+            border-color: #808080 #ffffff #ffffff #808080;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        button {
+            background-color: #c0c0c0;
+            border: 2px solid;
+            border-color: #ffffff #000000 #000000 #ffffff;
+            padding: 4px 12px;
+            margin: 3px;
+            font-family: 'MS Sans Serif', Arial, sans-serif;
+            font-size: 11px;
+            cursor: pointer;
+            min-width: 75px;
+        }
+        button:active {
+            border-color: #000000 #ffffff #ffffff #000000;
+        }
+    </style>
+</head>
+<body>
+    <div class="window">
+        <div class="title-bar">
+            <div class="title-bar-text">{{ title }}</div>
+        </div>
+        <div class="window-body">
+            <div class="graph-container">
+                {{ graph_html|safe }}
+            </div>
+            
+            <fieldset style="margin-top: 15px; border: 2px groove #ffffff; padding: 10px;">
+                <legend>Statistics</legend>
+                <div style="font-size: 11px;">
+                    {{ summary_html|safe }}
+                </div>
+            </fieldset>
+            
+            <div style="margin-top: 15px;">
+                <button onclick="window.location.href='/'">Back to Form</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

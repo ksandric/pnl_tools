@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pydantic
+apscheduler
+requests
+httpx
+plotly
+python-multipart
+jinja2

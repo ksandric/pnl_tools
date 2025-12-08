@@ -1,0 +1,20 @@
+# Configuration files
+config.py
+
+# Python
+__pycache__/
+
+# Virtual environments
+.venv/
+
+# Cache files
+*.pkl
+*.cache
+cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

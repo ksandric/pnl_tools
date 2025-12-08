@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PNL Tools</title>
+    <style>
+        body {
+            font-family: 'MS Sans Serif', Arial, sans-serif;
+            background-color: #008080;
+            margin: 0;
+            padding: 20px;
+            font-size: 11px;
+        }
+        
+        .window {
+            background-color: #c0c0c0;
+            border: 2px solid;
+            border-color: #ffffff #000000 #000000 #ffffff;
+            max-width: 600px;
+            margin: 20px auto;
+            box-shadow: 2px 2px 0px #000000;
+        }
+        
+        .title-bar {
+            background: linear-gradient(90deg, #000080, #1084d0);
+            color: white;
+            padding: 3px 5px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .title-bar-text {
+            font-size: 11px;
+        }
+        
+        .window-body {
+            padding: 15px;
+            background-color: #c0c0c0;
+        }
+        
+        .form-group {
+            margin-bottom: 12px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 3px;
+            font-weight: normal;
+        }
+        
+        .required {
+            color: #000080;
+        }
+        
+        input[type="text"],
+        input[type="datetime-local"] {
+            width: 100%;
+            padding: 3px;
+            border: 2px solid;
+            border-color: #808080 #ffffff #ffffff #808080;
+            background-color: #ffffff;
+            font-family: 'MS Sans Serif', Arial, sans-serif;
+            font-size: 11px;
+            box-sizing: border-box;
+        }
+        
+        input[type="text"]:focus,
+        input[type="datetime-local"]:focus {
+            outline: 1px dotted #000000;
+            outline-offset: -4px;
+        }
+        
+        .field-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .buttons {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px groove #ffffff;
+        }
+        
+        button {
+            background-color: #c0c0c0;
+            border: 2px solid;
+            border-color: #ffffff #000000 #000000 #ffffff;
+            padding: 4px 12px;
+            margin: 3px;
+            font-family: 'MS Sans Serif', Arial, sans-serif;
+            font-size: 11px;
+            cursor: pointer;
+            min-width: 75px;
+        }
+        
+        button:active {
+            border-color: #000000 #ffffff #ffffff #000000;
+            padding: 5px 11px 3px 13px;
+        }
+        
+        button:focus {
+            outline: 1px dotted #000000;
+            outline-offset: -4px;
+        }
+        
+        .status-bar {
+            border-top: 2px solid;
+            border-color: #ffffff #808080 #808080 #ffffff;
+            padding: 3px 5px;
+            margin-top: 10px;
+            background-color: #c0c0c0;
+            font-size: 11px;
+        }
+        
+        fieldset {
+            border: 2px groove #ffffff;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        
+        legend {
+            background-color: #c0c0c0;
+            padding: 0 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="window">
+        <div class="title-bar">
+            <div class="title-bar-text">PNL Tools</div>
+        </div>
+        <div class="window-body">
+            <form method="POST" action="/process">
+                <fieldset>
+                    <legend>API Configuration</legend>
+                    <div class="form-group">
+                        <label>API_KEY <span class="required">*</span></label>
+                        <input type="text" name="api_key" required>
+                    </div>
+                    <div class="form-group">
+                        <label>API_SECRET <span class="required">*</span></label>
+                        <input type="text" name="api_secret" required>
+                    </div>
+                </fieldset>
+                
+                <fieldset>
+                    <legend>Time Range (Optional)</legend>
+                    <div class="form-group">
+                        <label>Start Date & Time</label>
+                        <input type="datetime-local" name="start_datetime">
+                    </div>
+                    <div class="form-group">
+                        <label>End Date & Time</label>
+                        <input type="datetime-local" name="end_datetime">
+                    </div>
+                </fieldset>
+                
+                <fieldset>
+                    <legend>Symbols (Optional)</legend>
+                    <div class="form-group">
+                        <label>Trading Symbols (comma separated)</label>
+                        <input type="text" name="symbols" placeholder="BTC/USDT, ETH/USDT">
+                    </div>
+                </fieldset>
+                
+                <fieldset>
+                    <legend>Chart Type</legend>
+                    <div class="form-group">
+                        <label>Select Chart Type</label>
+                        <select name="chart_type" style="width: 100%; padding: 3px; border: 2px solid; border-color: #808080 #ffffff #ffffff #808080; background-color: #ffffff; font-family: 'MS Sans Serif', Arial, sans-serif; font-size: 11px;">
+                            <option value="pnl" selected>PnL Chart</option>
+                            <option value="volume">Volume Chart</option>
+                            <option value="all">All Charts (Combined)</option>
+                        </select>
+                    </div>
+                </fieldset>
+                
+                <div class="buttons">
+                    <button type="submit" name="action" value="get_pnl_previous_month">Previous Month</button>
+                    <button type="submit" name="action" value="get_pnl_current_month">Current Month</button>
+                    <button type="submit" name="action" value="get_pnl_today">Today</button>
+                    <button type="submit" name="action" value="get_pnl_yesterday">Yesterday</button>
+                    <button type="submit" name="action" value="get_pnl_custom">Custom Range</button>
+                </div>
+                
+                <div class="status-bar">
+                    Ready
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
