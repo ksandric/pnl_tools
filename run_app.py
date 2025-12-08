@@ -65,16 +65,16 @@ async def process_form(
             # Получаем данные в зависимости от action
             if action == "get_pnl_today":
                 pnl_data = exchange.get_pnl_today(api_key, api_secret, category="linear")
-                title = "PnL Today"
+                title = "Range: Today"
             elif action == "get_pnl_yesterday":
                 pnl_data = exchange.get_pnl_yesterday(api_key, api_secret, category="linear")
-                title = "PnL Yesterday"
+                title = "Range: Yesterday"
             elif action == "get_pnl_current_month":
                 pnl_data = exchange.get_pnl_current_month(api_key, api_secret, category="linear")
-                title = "PnL Current Month"
+                title = "Range: Current Month"
             elif action == "get_pnl_previous_month":
                 pnl_data = exchange.get_pnl_previous_month(api_key, api_secret, category="linear")
-                title = "PnL Previous Month"
+                title = "Range: Previous Month"
             elif action == "get_pnl_custom":
                 # Для кастомного периода нужно преобразовать даты в миллисекунды
                 if start_datetime and end_datetime:
@@ -84,7 +84,7 @@ async def process_form(
                     end_ms = int(end_dt.timestamp() * 1000)
                     pnl_data = exchange.get_all_closed_pnl(api_key, api_secret, category="linear", 
                                                            start_time=start_ms, end_time=end_ms)
-                    title = f"PnL Custom Period"
+                    title = f"Range: Custom Period"
                 else:
                     return HTMLResponse(content="<h1>Error: Start and End datetime are required for custom range</h1>")
             else:
@@ -96,15 +96,15 @@ async def process_form(
         # Устанавливаем заголовок если не был установлен (для кеша)
         if 'title' not in locals():
             if action == "get_pnl_today":
-                title = "PnL Today"
+                title = "Range: Today"
             elif action == "get_pnl_yesterday":
-                title = "PnL Yesterday"
+                title = "Range: Yesterday"
             elif action == "get_pnl_current_month":
-                title = "PnL Current Month"
+                title = "Range: Current Month"
             elif action == "get_pnl_previous_month":
-                title = "PnL Previous Month"
+                title = "Range: Previous Month"
             elif action == "get_pnl_custom":
-                title = "PnL Custom Period"
+                title = "Range: Custom Period"
         
         title = title_prefix + title
         
@@ -115,7 +115,7 @@ async def process_form(
         summary_html = data.get_data_summary_html(plotly_data)
         
         # Создаем график с выбранным типом
-        fig = chart.create_plotly_chart(plotly_data, title=title, chart_type=chart_type)
+        fig = chart.create_plotly_chart(plotly_data, chart_type=chart_type)
         
         if fig:
             # Преобразуем график в HTML

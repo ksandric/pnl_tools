@@ -1,0 +1,162 @@
+/* Windows 95 Style CSS */
+
+body {
+    font-family: 'MS Sans Serif', Arial, sans-serif;
+    background-color: #008080;
+    margin: 0;
+    padding: 20px;
+    font-size: 11px;
+}
+
+.window {
+    background-color: #c0c0c0;
+    border: 2px solid;
+    border-color: #ffffff #000000 #000000 #ffffff;
+    max-width: 95%;
+    margin: 20px auto;
+    box-shadow: 2px 2px 0px #000000;
+}
+
+.window.form-window {
+    max-width: 600px;
+}
+
+.title-bar {
+    background: linear-gradient(90deg, #000080, #1084d0);
+    color: white;
+    padding: 3px 5px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.title-bar-text {
+    font-size: 11px;
+}
+
+.window-body {
+    padding: 15px;
+    background-color: #c0c0c0;
+}
+
+.form-group {
+    margin-bottom: 12px;
+}
+
+label {
+    display: block;
+    margin-bottom: 3px;
+    font-weight: normal;
+}
+
+.required {
+    color: #000080;
+}
+
+input[type="text"],
+input[type="datetime-local"],
+select {
+    width: 100%;
+    padding: 3px;
+    border: 2px solid;
+    border-color: #808080 #ffffff #ffffff #808080;
+    background-color: #ffffff;
+    font-family: 'MS Sans Serif', Arial, sans-serif;
+    font-size: 11px;
+    box-sizing: border-box;
+}
+
+input[type="text"]:focus,
+input[type="datetime-local"]:focus,
+select:focus {
+    outline: 1px dotted #000000;
+    outline-offset: -4px;
+}
+
+.field-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.buttons {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 2px groove #ffffff;
+}
+
+button {
+    background-color: #c0c0c0;
+    border: 2px solid;
+    border-color: #ffffff #000000 #000000 #ffffff;
+    padding: 4px 12px;
+    margin: 3px;
+    font-family: 'MS Sans Serif', Arial, sans-serif;
+    font-size: 11px;
+    cursor: pointer;
+    min-width: 75px;
+}
+
+button:active {
+    border-color: #000000 #ffffff #ffffff #000000;
+    padding: 5px 11px 3px 13px;
+}
+
+button:focus {
+    outline: 1px dotted #000000;
+    outline-offset: -4px;
+}
+
+.status-bar {
+    border-top: 2px solid;
+    border-color: #ffffff #808080 #808080 #ffffff;
+    padding: 3px 5px;
+    margin-top: 10px;
+    background-color: #c0c0c0;
+    font-size: 11px;
+}
+
+fieldset {
+    border: 2px groove #ffffff;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+legend {
+    background-color: #c0c0c0;
+    padding: 0 5px;
+}
+
+.graph-container {
+    background-color: #ffffff;
+    border: 2px solid;
+    border-color: #808080 #ffffff #ffffff #808080;
+    padding: 10px;
+    margin: 10px 0;
+}
+
+/* Table styles */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 2px solid;
+    border-color: #808080 #ffffff #ffffff #808080;
+    background-color: #ffffff;
+    font-size: 11px;
+}
+
+thead tr {
+    background-color: #000080;
+    color: white;
+}
+
+th, td {
+    padding: 5px;
+    border: 1px solid #808080;
+}
+
+th {
+    text-align: left;
+    font-weight: bold;
+}

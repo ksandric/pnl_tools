@@ -1,7 +1,10 @@
 import hashlib
 import os
 import pickle
+import re
 from datetime import datetime, timezone, timedelta
+import httpx
+import config
 
 
 # Папка для кеша
@@ -10,7 +13,7 @@ os.makedirs(CACHE_DIR, exist_ok=True)
 
 
 async def send_telegram_message(chat_id: int, chat: int, text: str):
-    TOKEN = '' 
+    TOKEN = config.TELEGRAM_BOT_TOKEN 
     async with httpx.AsyncClient() as client:
         await client.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", data={"chat_id": chat, "text": text, "parse_mode": "HTML"})
 
@@ -23,17 +26,20 @@ def generate_cache_key(api_key: str, action: str, start_datetime: str = None, en
     if action == "get_pnl_today":
         # Кеш по текущей дате
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        return f"{api_hash}_{action}_{today}"
+        key = f"{api_hash}_{action}_{today}"
+        return sanitize_cache_key(key)
     
     elif action == "get_pnl_yesterday":
         # Кеш по вчерашней дате
         yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
-        return f"{api_hash}_{action}_{yesterday}"
+        key = f"{api_hash}_{action}_{yesterday}"
+        return sanitize_cache_key(key)
     
     elif action == "get_pnl_current_month":
         # Кеш по текущему месяцу
         current_month = datetime.now(timezone.utc).strftime("%Y-%m")
-        return f"{api_hash}_{action}_{current_month}"
+        key = f"{api_hash}_{action}_{current_month}"
+        return sanitize_cache_key(key)
     
     elif action == "get_pnl_previous_month":
         # Кеш по предыдущему месяцу
@@ -42,14 +48,45 @@ def generate_cache_key(api_key: str, action: str, start_datetime: str = None, en
             prev_month = f"{current.year - 1}-12"
         else:
             prev_month = f"{current.year}-{current.month - 1:02d}"
-        return f"{api_hash}_{action}_{prev_month}"
+        key = f"{api_hash}_{action}_{prev_month}"
+        return sanitize_cache_key(key)
     
     elif action == "get_pnl_custom":
         # Кеш по диапазону дат
         if start_datetime and end_datetime:
-            return f"{api_hash}_{action}_{start_datetime}_{end_datetime}"
+            # Форматируем datetime строки в безопасный для имени файла формат
+            # Возможный вход: '2025-01-01T00:00' или похожие. Заменим 'T' на '_' для читаемости
+            def fmt(dt_str: str) -> str:
+                try:
+                    s = dt_str.replace('T', '_')
+                except Exception:
+                    s = dt_str
+                return s
+
+            s_start = fmt(start_datetime)
+            s_end = fmt(end_datetime)
+            key = f"{api_hash}_{action}_{s_start}_{s_end}"
+            return sanitize_cache_key(key)
     
-    return f"{api_hash}_{action}_unknown"
+    return sanitize_cache_key(f"{api_hash}_{action}_unknown")
+
+
+def sanitize_cache_key(key: str) -> str:
+    """Sanitize a cache key so it becomes a valid filename on Windows and other OS.
+
+    Replaces any character that is not alphanumeric, dot, underscore or hyphen with an underscore.
+    Also collapses repeated underscores and trims leading/trailing separators.
+    """
+    # Replace any unsafe character with underscore
+    safe = re.sub(r"[^A-Za-z0-9._-]", "_", key)
+    # Collapse multiple underscores to a single one
+    safe = re.sub(r"_+", "_", safe)
+    # Trim leading/trailing underscores or dots
+    safe = safe.strip("_.")
+    # Fallback to a short hash if result becomes empty
+    if not safe:
+        safe = hashlib.md5(key.encode()).hexdigest()[:12]
+    return safe
 
 
 def get_cache_file_path(cache_key: str) -> str:

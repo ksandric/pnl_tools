@@ -1,10 +1,9 @@
-def create_plotly_chart(plotly_data, title="Накопительный PnL по символам", chart_type='pnl'):
+def create_plotly_chart(plotly_data, chart_type='pnl'):
     """
     Создает график plotly из подготовленных данных
 
     Args:
         plotly_data: данные из prepare_data_for_plotly()
-        title: заголовок графика
         chart_type: тип графика - 'pnl', 'fees', 'volume' или 'all'
 
     Returns:
@@ -95,9 +94,8 @@ def create_plotly_chart(plotly_data, title="Накопительный PnL по 
         fig.update_yaxes(title_text="Объем", row=3, col=1)
 
         fig.update_layout(
-            title=title,
             hovermode='x unified',
-            template='plotly_white',
+            template='simple_white',
             height=900,
             legend=dict(
                 yanchor="top",
@@ -146,11 +144,11 @@ def create_plotly_chart(plotly_data, title="Накопительный PnL по 
             ))
 
         fig.update_layout(
-            title=title,
+            height=600,
             xaxis_title="Время (UTC)",
             yaxis_title=y_title,
             hovermode='x unified',
-            template='plotly_white',
+            template='simple_white',
             legend=dict(
                 yanchor="top",
                 y=0.99,
