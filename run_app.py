@@ -3,6 +3,7 @@ import asyncio
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 import httpx
 import uvicorn
 import exchange
@@ -16,6 +17,7 @@ from utils import generate_cache_key, load_from_cache, save_to_cache
 app = FastAPI()
 last_requests = {}
 templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # [Unit]
 # Description=Async app Service
@@ -124,7 +126,15 @@ async def process_form(
                 "request": request,
                 "title": title,
                 "graph_html": graph_html,
-                "summary_html": summary_html
+                "summary_html": summary_html,
+                # Echo submitted form values so the results page can render a filled form
+                "api_key": api_key,
+                "api_secret": api_secret,
+                "start_datetime": start_datetime,
+                "end_datetime": end_datetime,
+                "symbols": symbols,
+                "chart_type": chart_type,
+                "action": action
             })
         else:
             return HTMLResponse(content="<h1>Error: Could not generate chart</h1>")

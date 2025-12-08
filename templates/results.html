@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>PNL Tools - Results</title>
+    <link rel="icon" href="/static/computer.ico" type="image/x-icon">
     <style>
         body {
             font-family: 'MS Sans Serif', Arial, sans-serif;
@@ -68,8 +69,65 @@
                 </div>
             </fieldset>
             
+            <!-- Re-render the original form pre-filled with submitted values -->
             <div style="margin-top: 15px;">
-                <button onclick="window.location.href='/'">Back to Form</button>
+                <form method="POST" action="/process">
+                    <fieldset>
+                        <legend>API Configuration</legend>
+                        <div class="form-group">
+                            <label>API_KEY <span class="required">*</span></label>
+                            <input type="text" name="api_key" required value="{{ api_key|default('') }}">
+                        </div>
+                        <div class="form-group">
+                            <label>API_SECRET <span class="required">*</span></label>
+                            <input type="text" name="api_secret" required value="{{ api_secret|default('') }}">
+                        </div>
+                    </fieldset>
+                    
+                    <fieldset>
+                        <legend>Time Range (Optional)</legend>
+                        <div class="form-group">
+                            <label>Start Date & Time</label>
+                            <input type="datetime-local" name="start_datetime" value="{{ start_datetime|default('') }}">
+                        </div>
+                        <div class="form-group">
+                            <label>End Date & Time</label>
+                            <input type="datetime-local" name="end_datetime" value="{{ end_datetime|default('') }}">
+                        </div>
+                    </fieldset>
+                    
+                    <fieldset>
+                        <legend>Symbols (Optional)</legend>
+                        <div class="form-group">
+                            <label>Trading Symbols (comma separated)</label>
+                            <input type="text" name="symbols" placeholder="BTC/USDT, ETH/USDT" value="{{ symbols|default('') }}">
+                        </div>
+                    </fieldset>
+                    
+                    <fieldset>
+                        <legend>Chart Type</legend>
+                        <div class="form-group">
+                            <label>Select Chart Type</label>
+                            <select name="chart_type" style="width: 100%; padding: 3px; border: 2px solid; border-color: #808080 #ffffff #ffffff #808080; background-color: #ffffff; font-family: 'MS Sans Serif', Arial, sans-serif; font-size: 11px;">
+                                <option value="pnl" {% if chart_type == 'pnl' %}selected{% endif %}>PnL Chart</option>
+                                <option value="volume" {% if chart_type == 'volume' %}selected{% endif %}>Volume Chart</option>
+                                <option value="all" {% if chart_type == 'all' %}selected{% endif %}>All Charts (Combined)</option>
+                            </select>
+                        </div>
+                    </fieldset>
+                    
+                    <div class="buttons">
+                        <button type="submit" name="action" value="get_pnl_previous_month">Previous Month</button>
+                        <button type="submit" name="action" value="get_pnl_current_month">Current Month</button>
+                        <button type="submit" name="action" value="get_pnl_today">Today</button>
+                        <button type="submit" name="action" value="get_pnl_yesterday">Yesterday</button>
+                        <button type="submit" name="action" value="get_pnl_custom">Custom Range</button>
+                    </div>
+                </form>
+            </div>
+            
+            <div style="margin-top: 10px;">
+                <button onclick="window.location.href='/'">Back to Blank Form</button>
             </div>
         </div>
     </div>
