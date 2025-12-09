@@ -33,7 +33,7 @@ def prepare_data_for_plotly(data):
         dt = datetime.fromtimestamp(timestamp_ms / 1000, tz=timezone.utc)
 
         # Вычисляем метрики
-        net_pnl = float(closed_pnl) - float(close_fee) - float(open_fee)
+        net_pnl = float(closed_pnl)
         total_fees = float(close_fee) + float(open_fee)
         total_volume = float(cum_entry_value) + float(cum_exit_value)
 
