@@ -50,6 +50,20 @@ label {
     font-weight: normal;
 }
 
+.summary-table th {
+    cursor: pointer;
+}
+/* Hover should mimic Windows-95 selection: dark blue background with white text */
+.summary-table tr:hover td {
+    background-color: #c0c0c0;
+}
+.summary-table th.sort-asc::after {
+    content: " \25B2"; /* ▲ */
+}
+.summary-table th.sort-desc::after {
+    content: " \25BC"; /* ▼ */
+}
+
 .required {
     color: #000080;
 }

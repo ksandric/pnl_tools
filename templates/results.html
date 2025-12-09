@@ -21,6 +21,97 @@
                     {{ summary_html|safe }}
                 </div>
             </fieldset>
+
+            <script>
+                // Make the statistics table sortable and add hover highlight class
+                document.addEventListener('DOMContentLoaded', function () {
+                    try {
+                        // Find the fieldset that contains the Statistics legend
+                        var statsFs = Array.from(document.querySelectorAll('fieldset')).find(function(fs){
+                            var lg = fs.querySelector('legend');
+                            return lg && lg.textContent.trim() === 'Statistics';
+                        });
+
+                        var table = null;
+                        if (statsFs) table = statsFs.querySelector('table');
+                        if (!table) table = document.querySelector('table');
+                        if (!table) return;
+
+                        // Add class for styling
+                        table.classList.add('summary-table');
+
+                        var ths = table.querySelectorAll('thead th');
+                        var hasThead = ths.length > 0;
+                        if (!hasThead) {
+                            // If table has no thead, assume first row is header
+                            var firstRow = table.querySelector('tr');
+                            if (firstRow) {
+                                ths = firstRow.querySelectorAll('th,td');
+                                // mark that we'll skip first row when sorting
+                            }
+                        }
+
+                        // Convert NodeList to array for iteration
+                        ths = Array.from(ths);
+
+                        // Helper to parse cell value (numeric or string)
+                        function cellValue(cell) {
+                            var txt = (cell && cell.textContent) ? cell.textContent.trim() : '';
+                            // Try parse number (remove non-numeric except dot and minus)
+                            var num = parseFloat(txt.replace(/[^0-9+\-.,eE]/g, ''));
+                            if (!isNaN(num) && txt.search(/[0-9]/) !== -1) return num;
+                            return txt.toLowerCase();
+                        }
+
+                        function sortTableBy(colIndex, asc) {
+                            var tbody = table.tBodies[0] || table;
+                            var rows = Array.from(table.querySelectorAll('tr'));
+                            var headerRow = null;
+                            // If there's a thead, skip those rows
+                            if (table.tHead) {
+                                headerRow = Array.from(table.tHead.rows).pop();
+                                rows = Array.from(table.tBodies[0].rows);
+                            } else {
+                                // assume first row is header
+                                headerRow = table.querySelector('tr');
+                                rows = Array.from(table.querySelectorAll('tr')).slice(1);
+                            }
+
+                            rows.sort(function(a, b){
+                                var aCell = a.children[colIndex];
+                                var bCell = b.children[colIndex];
+                                var va = cellValue(aCell);
+                                var vb = cellValue(bCell);
+                                if (va === vb) return 0;
+                                if (typeof va === 'number' && typeof vb === 'number') {
+                                    return asc ? va - vb : vb - va;
+                                }
+                                return asc ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
+                            });
+
+                            // Re-append rows in sorted order
+                            var parent = table.tBodies[0] || table;
+                            rows.forEach(function(r){ parent.appendChild(r); });
+                        }
+
+                        // Attach click handlers to headers
+                        ths.forEach(function(th, idx){
+                            var colIndex = idx;
+                            th.style.cursor = 'pointer';
+                            th.addEventListener('click', function(){
+                                // Toggle sort direction class
+                                var currentlyAsc = th.classList.contains('sort-asc');
+                                // Remove sort classes from all headers
+                                ths.forEach(function(x){ x.classList.remove('sort-asc','sort-desc'); });
+                                th.classList.add(currentlyAsc ? 'sort-desc' : 'sort-asc');
+                                sortTableBy(colIndex, !currentlyAsc);
+                            });
+                        });
+                    } catch (e) {
+                        console.error('Table sorter init error:', e);
+                    }
+                });
+            </script>
             
             <!-- Re-render the original form pre-filled with submitted values -->
             <div style="margin-top: 15px;">
