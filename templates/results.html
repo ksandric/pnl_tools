@@ -4,124 +4,313 @@
     <title>PNL Tools - Results</title>
     <link rel="icon" href="/static/computer.ico" type="image/x-icon">
     <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body {
+            font-family: 'MS Sans Serif', Arial, sans-serif;
+            background-color: #008080;
+            margin: 0;
+            padding: 20px;
+            font-size: 11px;
+        }
+        
+        .window {
+            background-color: #c0c0c0;
+            border: 2px solid;
+            border-color: #ffffff #000000 #000000 #ffffff;
+            max-width: 95%;
+            margin: 20px auto;
+            box-shadow: 2px 2px 0px #000000;
+        }
+        
+        .title-bar {
+            background: linear-gradient(90deg, #000080, #1084d0);
+            color: white;
+            padding: 3px 5px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .title-bar-text {
+            font-size: 11px;
+        }
+        
+        .window-body {
+            padding: 15px;
+            background-color: #c0c0c0;
+        }
+        
+        .graph-container {
+            background-color: #ffffff;
+            border: 2px solid;
+            border-color: #808080 #ffffff #ffffff #808080;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        
+        button {
+            background-color: #c0c0c0;
+            border: 2px solid;
+            border-color: #ffffff #000000 #000000 #ffffff;
+            padding: 4px 12px;
+            margin: 3px;
+            font-family: 'MS Sans Serif', Arial, sans-serif;
+            font-size: 11px;
+            cursor: pointer;
+            min-width: 75px;
+        }
+        
+        button:active {
+            border-color: #000000 #ffffff #ffffff #000000;
+            padding: 5px 11px 3px 13px;
+        }
+        
+        button:focus {
+            outline: 1px dotted #000000;
+            outline-offset: -4px;
+        }
+        
+        /* Windows 95 style tabs */
+        .tabs-container {
+            margin-top: 0;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            margin-bottom: -2px;
+            padding-left: 5px;
+        }
+        
+        .tab-button {
+            background-color: #c0c0c0;
+            border: 2px solid;
+            border-color: #ffffff #000000 #000000 #ffffff;
+            padding: 4px 12px;
+            margin-right: 2px;
+            font-family: 'MS Sans Serif', Arial, sans-serif;
+            font-size: 11px;
+            cursor: pointer;
+            position: relative;
+            top: 2px;
+        }
+        
+        .tab-button.active {
+            background-color: #c0c0c0;
+            border-bottom-color: #c0c0c0;
+            font-weight: bold;
+            top: 0;
+            padding-top: 6px;
+        }
+        
+        .tab-button:hover:not(.active) {
+            background-color: #d0d0d0;
+        }
+        
+        .tab-content {
+            border: 2px groove #ffffff;
+            padding: 10px;
+            background-color: #c0c0c0;
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        fieldset {
+            border: 2px groove #ffffff;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        
+        legend {
+            background-color: #c0c0c0;
+            padding: 0 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 12px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 3px;
+            font-weight: normal;
+        }
+        
+        .required {
+            color: #000080;
+        }
+        
+        input[type="text"],
+        input[type="datetime-local"],
+        select {
+            width: 100%;
+            padding: 3px;
+            border: 2px solid;
+            border-color: #808080 #ffffff #ffffff #808080;
+            background-color: #ffffff;
+            font-family: 'MS Sans Serif', Arial, sans-serif;
+            font-size: 11px;
+            box-sizing: border-box;
+        }
+        
+        input[type="text"]:focus,
+        input[type="datetime-local"]:focus,
+        select:focus {
+            outline: 1px dotted #000000;
+            outline-offset: -4px;
+        }
+        
+        .buttons {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px groove #ffffff;
+        }
+    </style>
 </head>
 <body>
+    <!-- Graph Window -->
     <div class="window">
         <div class="title-bar">
-            <div class="title-bar-text">{{ title }}</div>
+            <div class="title-bar-text">{{ title }} - Chart</div>
         </div>
         <div class="window-body">
             <div class="graph-container">
                 {{ graph_html|safe }}
             </div>
-            
-            <fieldset style="margin-top: 15px;">
-                <legend>Statistics</legend>
-                <div style="font-size: 11px;">
-                    {{ summary_html|safe }}
+        </div>
+    </div>
+    
+    <!-- Statistics Window with Tabs -->
+    <div class="window">
+        <div class="title-bar">
+            <div class="title-bar-text">Statistics & Data Tables</div>
+        </div>
+        <div class="window-body">
+            <div class="tabs-container">
+                <div class="tab-buttons">
+                    <button class="tab-button active" onclick="switchTab(event, 'pnl-stats')">PnL Statistics</button>
+                    <button class="tab-button" onclick="switchTab(event, 'executions')">Executions</button>
+                    <button class="tab-button" onclick="switchTab(event, 'transfers')">Transfers & Deposits</button>
                 </div>
-            </fieldset>
-
-            <script>
-                // Make the statistics table sortable and add hover highlight class
-                document.addEventListener('DOMContentLoaded', function () {
-                    try {
-                        // Find the fieldset that contains the Statistics legend
-                        var statsFs = Array.from(document.querySelectorAll('fieldset')).find(function(fs){
-                            var lg = fs.querySelector('legend');
-                            return lg && lg.textContent.trim() === 'Statistics';
-                        });
-
-                        var table = null;
-                        if (statsFs) table = statsFs.querySelector('table');
-                        if (!table) table = document.querySelector('table');
-                        if (!table) return;
-
-                        // Add class for styling
-                        table.classList.add('summary-table');
-
-                        var ths = table.querySelectorAll('thead th');
-                        var hasThead = ths.length > 0;
-                        if (!hasThead) {
-                            // If table has no thead, assume first row is header
-                            var firstRow = table.querySelector('tr');
-                            if (firstRow) {
-                                ths = firstRow.querySelectorAll('th,td');
-                                // mark that we'll skip first row when sorting
-                            }
-                        }
-
-                        // Convert NodeList to array for iteration
-                        ths = Array.from(ths);
-
-                        // Helper to parse cell value (numeric or string)
-                        function cellValue(cell) {
-                            var txt = (cell && cell.textContent) ? cell.textContent.trim() : '';
-                            // Try parse number (remove non-numeric except dot and minus)
-                            var num = parseFloat(txt.replace(/[^0-9+\-.,eE]/g, ''));
-                            if (!isNaN(num) && txt.search(/[0-9]/) !== -1) return num;
-                            return txt.toLowerCase();
-                        }
-
-                        function sortTableBy(colIndex, asc) {
-                            var tbody = table.tBodies[0] || table;
-                            var rows = Array.from(table.querySelectorAll('tr'));
-                            var headerRow = null;
-                            // If there's a thead, skip those rows
-                            if (table.tHead) {
-                                headerRow = Array.from(table.tHead.rows).pop();
-                                rows = Array.from(table.tBodies[0].rows);
-                            } else {
-                                // assume first row is header
-                                headerRow = table.querySelector('tr');
-                                rows = Array.from(table.querySelectorAll('tr')).slice(1);
-                            }
-
-                            rows.sort(function(a, b){
-                                var aCell = a.children[colIndex];
-                                var bCell = b.children[colIndex];
-                                var va = cellValue(aCell);
-                                var vb = cellValue(bCell);
-                                if (va === vb) return 0;
-                                if (typeof va === 'number' && typeof vb === 'number') {
-                                    return asc ? va - vb : vb - va;
-                                }
-                                return asc ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
-                            });
-
-                            // Re-append rows in sorted order
-                            var parent = table.tBodies[0] || table;
-                            rows.forEach(function(r){ parent.appendChild(r); });
-                        }
-
-                        // Attach click handlers to headers
-                        ths.forEach(function(th, idx){
-                            var colIndex = idx;
-                            th.style.cursor = 'pointer';
-                            th.addEventListener('click', function(){
-                                // Toggle sort direction class
-                                var currentlyAsc = th.classList.contains('sort-asc');
-                                // Remove sort classes from all headers
-                                ths.forEach(function(x){ x.classList.remove('sort-asc','sort-desc'); });
-                                th.classList.add(currentlyAsc ? 'sort-desc' : 'sort-asc');
-                                sortTableBy(colIndex, !currentlyAsc);
-                            });
-                        });
-                    } catch (e) {
-                        console.error('Table sorter init error:', e);
-                    }
-                });
-            </script>
-            
-            <!-- Re-render the original form pre-filled with submitted values -->
-            <div style="margin-top: 15px;">
-                {% include 'form.html' %}
-            </div>
-            
-            <div style="margin-top: 10px;">
-                <button onclick="window.location.href='/'">Back to Blank Form</button>
+                
+                <div id="pnl-stats" class="tab-content active">
+                    <div style="font-size: 11px;">
+                        {{ summary_html|safe }}
+                    </div>
+                </div>
+                
+                <div id="executions" class="tab-content">
+                    <div style="font-size: 11px;">
+                        {% if executions_html %}
+                            {{ executions_html|safe }}
+                        {% else %}
+                            <p>No executions data available</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div id="transfers" class="tab-content">
+                    <div style="font-size: 11px;">
+                        {% if transfers_html %}
+                            {{ transfers_html|safe }}
+                        {% else %}
+                            <p>No transfers/deposits data available</p>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+    
+    <!-- Form Window -->
+    <div class="window">
+        <div class="title-bar">
+            <div class="title-bar-text">Query Parameters</div>
+        </div>
+        <div class="window-body">
+            <form method="POST" action="/process">
+                <fieldset>
+                    <legend>API Configuration</legend>
+                    <div class="form-group">
+                        <label>API_KEY <span class="required">*</span></label>
+                        <input type="text" name="api_key" required value="{{ api_key|default('') }}">
+                    </div>
+                    <div class="form-group">
+                        <label>API_SECRET <span class="required">*</span></label>
+                        <input type="text" name="api_secret" required value="{{ api_secret|default('') }}">
+                    </div>
+                </fieldset>
+                
+                <fieldset>
+                    <legend>Time Range (Optional)</legend>
+                    <div class="form-group">
+                        <label>Start Date & Time</label>
+                        <input type="datetime-local" name="start_datetime" value="{{ start_datetime|default('') }}">
+                    </div>
+                    <div class="form-group">
+                        <label>End Date & Time</label>
+                        <input type="datetime-local" name="end_datetime" value="{{ end_datetime|default('') }}">
+                    </div>
+                </fieldset>
+                
+                <fieldset>
+                    <legend>Symbols (Optional)</legend>
+                    <div class="form-group">
+                        <label>Trading Symbols (comma separated)</label>
+                        <input type="text" name="symbols" placeholder="BTC/USDT, ETH/USDT" value="{{ symbols|default('') }}">
+                    </div>
+                </fieldset>
+                
+                <fieldset>
+                    <legend>Chart Type</legend>
+                    <div class="form-group">
+                        <label>Select Chart Type</label>
+                        <select name="chart_type">
+                            <option value="pnl" {% if chart_type == 'pnl' %}selected{% endif %}>PnL Chart</option>
+                            <option value="volume" {% if chart_type == 'volume' %}selected{% endif %}>Volume Chart</option>
+                            <option value="all" {% if chart_type == 'all' %}selected{% endif %}>All Charts (Combined)</option>
+                        </select>
+                    </div>
+                </fieldset>
+                
+                <div class="buttons">
+                    <button type="submit" name="action" value="get_pnl_previous_month">Previous Month</button>
+                    <button type="submit" name="action" value="get_pnl_current_month">Current Month</button>
+                    <button type="submit" name="action" value="get_pnl_today">Today</button>
+                    <button type="submit" name="action" value="get_pnl_yesterday">Yesterday</button>
+                    <button type="submit" name="action" value="get_pnl_custom">Custom Range</button>
+                </div>
+            </form>
+            
+            <div style="margin-top: 15px; padding-top: 10px; border-top: 2px groove #ffffff;">
+                <button onclick="window.location.href='/'">New Query (Blank Form)</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function switchTab(event, tabId) {
+            // Hide all tab contents
+            var tabContents = document.getElementsByClassName('tab-content');
+            for (var i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove('active');
+            }
+            
+            // Deactivate all tab buttons
+            var tabButtons = document.getElementsByClassName('tab-button');
+            for (var i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove('active');
+            }
+            
+            // Show selected tab content
+            document.getElementById(tabId).classList.add('active');
+            
+            // Activate clicked button
+            event.currentTarget.classList.add('active');
+        }
+    </script>
 </body>
 </html>

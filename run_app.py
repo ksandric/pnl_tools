@@ -117,6 +117,127 @@ async def process_form(
         # Создаем график с выбранным типом
         fig = chart.create_plotly_chart(plotly_data, chart_type=chart_type)
         
+        # --- Загрузка дополнительных данных: executions и transfers ---
+        executions_html = ""
+        transfers_html = ""
+        
+        # Проверяем кеш для executions
+        executions_cache_key = cache_key + "_executions"
+        executions_data = load_from_cache(executions_cache_key)
+        
+        if executions_data is not None:
+            print(f"Используем кешированные данные executions для ключа: {executions_cache_key}")
+        else:
+            print(f"Загружаем новые данные executions для ключа: {executions_cache_key}")
+            try:
+                if action == "get_pnl_today":
+                    executions_data = exchange.get_executions_today(api_key, api_secret, category="spot")
+                elif action == "get_pnl_yesterday":
+                    executions_data = exchange.get_executions_yesterday(api_key, api_secret, category="spot")
+                elif action == "get_pnl_current_month":
+                    executions_data = exchange.get_executions_current_month(api_key, api_secret, category="spot")
+                elif action == "get_pnl_previous_month":
+                    executions_data = exchange.get_executions_previous_month(api_key, api_secret, category="spot")
+                elif action == "get_pnl_custom":
+                    if start_datetime and end_datetime:
+                        start_dt = datetime.fromisoformat(start_datetime).replace(tzinfo=timezone.utc)
+                        end_dt = datetime.fromisoformat(end_datetime).replace(tzinfo=timezone.utc)
+                        start_ms = int(start_dt.timestamp() * 1000)
+                        end_ms = int(end_dt.timestamp() * 1000)
+                        executions_data = exchange.get_all_executions(api_key, api_secret, category="spot", 
+                                                                      start_time=start_ms, end_time=end_ms)
+                    else:
+                        executions_data = []
+                else:
+                    executions_data = []
+                
+                save_to_cache(executions_cache_key, executions_data)
+            except Exception as ex:
+                print(f"Ошибка загрузки executions: {ex}")
+                executions_data = []
+        
+        # Обрабатываем executions данные
+        if executions_data:
+            try:
+                executions_table_data = data.prepare_executions_for_table(executions_data)
+                executions_html = data.get_executions_summary_html(executions_table_data)
+            except Exception as ex:
+                print(f"Ошибка обработки executions: {ex}")
+                executions_html = f"<p>Ошибка обработки данных executions: {ex}</p>"
+        
+        # Проверяем кеш для transfers (inter, universal, deposits, withdraws)
+        transfers_cache_key = cache_key + "_transfers"
+        transfers_cached = load_from_cache(transfers_cache_key)
+        
+        if transfers_cached is not None:
+            print(f"Используем кешированные данные transfers для ключа: {transfers_cache_key}")
+            inter_transfers = transfers_cached.get('inter', [])
+            universal_transfers = transfers_cached.get('universal', [])
+            deposits = transfers_cached.get('deposits', [])
+            withdraws = transfers_cached.get('withdraws', [])
+        else:
+            print(f"Загружаем новые данные transfers для ключа: {transfers_cache_key}")
+            inter_transfers = []
+            universal_transfers = []
+            deposits = []
+            withdraws = []
+            
+            try:
+                if action == "get_pnl_today":
+                    inter_transfers = exchange.get_inter_transfers_today(api_key, api_secret)
+                    universal_transfers = exchange.get_universal_transfers_today(api_key, api_secret)
+                    deposits = exchange.get_deposits_today(api_key, api_secret)
+                    withdraws = exchange.get_withdraws_today(api_key, api_secret)
+                elif action == "get_pnl_yesterday":
+                    inter_transfers = exchange.get_inter_transfers_yesterday(api_key, api_secret)
+                    universal_transfers = exchange.get_universal_transfers_yesterday(api_key, api_secret)
+                    deposits = exchange.get_deposits_yesterday(api_key, api_secret)
+                    withdraws = exchange.get_withdraws_yesterday(api_key, api_secret)
+                elif action == "get_pnl_current_month":
+                    inter_transfers = exchange.get_inter_transfers_current_month(api_key, api_secret)
+                    universal_transfers = exchange.get_universal_transfers_current_month(api_key, api_secret)
+                    deposits = exchange.get_deposits_current_month(api_key, api_secret)
+                    withdraws = exchange.get_withdraws_current_month(api_key, api_secret)
+                elif action == "get_pnl_previous_month":
+                    inter_transfers = exchange.get_inter_transfers_previous_month(api_key, api_secret)
+                    universal_transfers = exchange.get_universal_transfers_previous_month(api_key, api_secret)
+                    deposits = exchange.get_deposits_previous_month(api_key, api_secret)
+                    withdraws = exchange.get_withdraws_previous_month(api_key, api_secret)
+                elif action == "get_pnl_custom":
+                    if start_datetime and end_datetime:
+                        start_dt = datetime.fromisoformat(start_datetime).replace(tzinfo=timezone.utc)
+                        end_dt = datetime.fromisoformat(end_datetime).replace(tzinfo=timezone.utc)
+                        start_ms = int(start_dt.timestamp() * 1000)
+                        end_ms = int(end_dt.timestamp() * 1000)
+                        inter_transfers = exchange.get_all_inter_transfers(api_key, api_secret, start_time=start_ms, end_time=end_ms)
+                        universal_transfers = exchange.get_all_universal_transfers(api_key, api_secret, start_time=start_ms, end_time=end_ms)
+                        deposits = exchange.get_all_deposits(api_key, api_secret, start_time=start_ms, end_time=end_ms)
+                        withdraws = exchange.get_all_withdraws(api_key, api_secret, start_time=start_ms, end_time=end_ms)
+                
+                # Сохраняем в кеш все transfers данные вместе
+                save_to_cache(transfers_cache_key, {
+                    'inter': inter_transfers,
+                    'universal': universal_transfers,
+                    'deposits': deposits,
+                    'withdraws': withdraws
+                })
+            except Exception as ex:
+                print(f"Ошибка загрузки transfers: {ex}")
+        
+        # Обрабатываем transfers данные
+        if inter_transfers or universal_transfers or deposits or withdraws:
+            try:
+                transfers_table_data = data.prepare_transfers_for_table(
+                    inter_transfers=inter_transfers,
+                    universal_transfers=universal_transfers,
+                    deposits=deposits,
+                    withdraws=withdraws
+                )
+                transfers_html = data.get_transfers_summary_html(transfers_table_data)
+            except Exception as ex:
+                print(f"Ошибка обработки transfers: {ex}")
+                transfers_html = f"<p>Ошибка обработки данных transfers: {ex}</p>"
+        
         if fig:
             # Преобразуем график в HTML
             graph_html = fig.to_html(full_html=False, include_plotlyjs='cdn')
@@ -127,6 +248,8 @@ async def process_form(
                 "title": title,
                 "graph_html": graph_html,
                 "summary_html": summary_html,
+                "executions_html": executions_html,
+                "transfers_html": transfers_html,
                 # Echo submitted form values so the results page can render a filled form
                 "api_key": api_key,
                 "api_secret": api_secret,
