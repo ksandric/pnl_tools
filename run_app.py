@@ -38,6 +38,30 @@ async def main_page(request: Request):
 
 
 @app.post("/process", response_class=HTMLResponse)
+async def process_form_loading(
+    request: Request,
+    api_key: str = Form(...),
+    api_secret: str = Form(...),
+    start_datetime: str = Form(None),
+    end_datetime: str = Form(None),
+    symbols: str = Form(None),
+    chart_type: str = Form("pnl"),
+    action: str = Form(...)
+):
+    """Show loading page with form data embedded"""
+    return templates.TemplateResponse("loading.html", {
+        "request": request,
+        "api_key": api_key,
+        "api_secret": api_secret,
+        "start_datetime": start_datetime or "",
+        "end_datetime": end_datetime or "",
+        "symbols": symbols or "",
+        "chart_type": chart_type,
+        "action": action
+    })
+
+
+@app.post("/process_async", response_class=HTMLResponse)
 async def process_form(
     request: Request,
     api_key: str = Form(...),
@@ -267,4 +291,4 @@ async def process_form(
 
 
 if __name__ == "__main__":
-    uvicorn.run("run_app:app", host="127.0.0.1", port=8082, reload=True)
+    uvicorn.run("run_app:app", host="0.0.0.0", port=8082, reload=False)

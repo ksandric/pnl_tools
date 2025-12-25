@@ -122,6 +122,10 @@ button:focus {
     outline-offset: -4px;
 }
 
+button:hover {
+    background-color: #d4d0c8;
+}
+
 .status-bar {
     border-top: 2px solid;
     border-color: #ffffff #808080 #808080 #ffffff;
@@ -173,4 +177,57 @@ th, td {
 th {
     text-align: left;
     font-weight: bold;
+}
+
+/* Windows 95 style tabs */
+.tabs-container {
+    margin-top: 0;
+}
+
+.tab-buttons {
+    display: flex;
+    margin-bottom: -2px;
+    padding-left: 5px;
+}
+
+.tab-button {
+    background-color: #c0c0c0;
+    border: 2px solid;
+    border-color: #ffffff #808080 #808080 #ffffff;
+    padding: 4px 12px 2px 12px;
+    margin-right: 2px;
+    margin-bottom: 2px;
+    font-family: 'MS Sans Serif', Arial, sans-serif;
+    font-size: 11px;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+    min-width: 75px;
+    text-align: center;
+}
+
+.tab-button.active {
+    background-color: #c0c0c0;
+    border-color: #ffffff #808080 #c0c0c0 #ffffff;
+    padding: 4px 12px 4px 12px;
+    margin-bottom: 0;
+    z-index: 3;
+}
+
+.tab-button:not(.active):hover {
+    background-color: #d4d0c8;
+}
+
+.tab-content {
+    border: 2px solid;
+    border-color: #808080 #ffffff #ffffff #808080;
+    padding: 15px;
+    background-color: #c0c0c0;
+    display: none;
+    position: relative;
+    z-index: 2;
+}
+
+.tab-content.active {
+    display: block;
 }
