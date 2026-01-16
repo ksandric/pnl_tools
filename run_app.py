@@ -141,6 +141,19 @@ async def process_form(
         # Создаем график с выбранным типом
         fig = chart.create_plotly_chart(plotly_data, chart_type=chart_type)
         
+        # --- Загрузка информации о балансе и позициях (без кеширования) ---
+        account_summary_html = ""
+        try:
+            print("Загружаем информацию о балансе и позициях...")
+            account_summary_data = data.get_account_summary(api_key, api_secret, category="linear", account_type="UNIFIED")
+            # Добавляем api_key и api_secret в данные для использования в format_account_summary_html
+            account_summary_data["api_key"] = api_key
+            account_summary_data["api_secret"] = api_secret
+            account_summary_html = data.format_account_summary_html(account_summary_data)
+        except Exception as ex:
+            print(f"Ошибка загрузки account summary: {ex}")
+            account_summary_html = f"<p>Ошибка загрузки информации о балансе и позициях: {ex}</p>"
+        
         # --- Загрузка дополнительных данных: executions и transfers ---
         executions_html = ""
         transfers_html = ""
@@ -272,6 +285,7 @@ async def process_form(
                 "title": title,
                 "graph_html": graph_html,
                 "summary_html": summary_html,
+                "account_summary_html": account_summary_html,
                 "executions_html": executions_html,
                 "transfers_html": transfers_html,
                 # Echo submitted form values so the results page can render a filled form

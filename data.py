@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from collections import defaultdict
+import exchange
 
 
 def prepare_data_for_plotly(data):
@@ -718,3 +719,278 @@ def get_transfers_summary_html(transfers_data):
     ''')
 
     return ''.join(html_parts)
+
+
+# ============================================================================
+# Агрегированная информация о позициях и балансе
+# ============================================================================
+
+def get_account_summary(api_key, api_secret, category="linear", account_type="UNIFIED"):
+    """Получение агрегированной информации о позициях и балансе
+    
+    Args:
+        api_key: API ключ
+        api_secret: API секрет
+        category: Тип продукта для позиций (linear, inverse, option)
+        account_type: Тип аккаунта для баланса (UNIFIED, CONTRACT, SPOT, etc.)
+    
+    Returns:
+        dict: Агрегированная информация о балансе и позициях
+    """
+    print("\n" + "=" * 70)
+    print("Сбор информации о балансе и позициях...")
+    print("=" * 70)
+    
+    # Получение баланса
+    print("\n1. Получение баланса кошелька...")
+    wallet_data = exchange.get_wallet_balance(api_key, api_secret, account_type)
+    
+    # Получение позиций
+    print("\n2. Получение списка позиций...")
+    positions_data = exchange.get_all_positions(api_key, api_secret, category)
+    
+    # Обработка данных баланса
+    balance_info = {
+        "totalWalletBalance": "0",
+        "totalMarginBalance": "0",
+        "totalPerpUPL": "0",
+        "totalEquity": "0",
+        "coins": []
+    }
+    
+    if wallet_data and wallet_data.get("list"):
+        account = wallet_data["list"][0]  # Первый аккаунт
+        balance_info["totalWalletBalance"] = account.get("totalWalletBalance", "0")
+        balance_info["totalMarginBalance"] = account.get("totalMarginBalance", "0")
+        balance_info["totalPerpUPL"] = account.get("totalPerpUPL", "0")
+        balance_info["totalEquity"] = account.get("totalEquity", "0")
+        
+        # Список монет с их equity
+        for coin_data in account.get("coin", []):
+            coin_info = {
+                "coin": coin_data.get("coin", "N/A"),
+                "equity": coin_data.get("equity", "0")
+            }
+            balance_info["coins"].append(coin_info)
+    
+    # Обработка данных позиций
+    open_positions = []
+    position_value_long = 0.0
+    position_value_short = 0.0
+    unrealised_pnl_long = 0.0
+    unrealised_pnl_short = 0.0
+    
+    for pos in positions_data:
+        # Пропускаем закрытые позиции (size = 0)
+        size = float(pos.get("size", "0"))
+        if size == 0:
+            continue
+        
+        side = pos.get("side", "None")
+        position_value = float(pos.get("positionValue", "0"))
+        unrealised_pnl = float(pos.get("unrealisedPnl", "0"))
+        
+        # Добавляем в список открытых позиций
+        position_info = {
+            "symbol": pos.get("symbol", "N/A"),
+            "side": side,
+            "size": pos.get("size", "0"),
+            "positionValue": pos.get("positionValue", "0"),
+            "avgPrice": pos.get("avgPrice", "0"),
+            "unrealisedPnl": pos.get("unrealisedPnl", "0")
+        }
+        open_positions.append(position_info)
+        
+        # Агрегация по лонгам и шортам
+        if side == "Buy":
+            position_value_long += position_value
+            unrealised_pnl_long += unrealised_pnl
+        elif side == "Sell":
+            position_value_short += position_value
+            unrealised_pnl_short += unrealised_pnl
+    
+    positions_info = {
+        "open_positions": open_positions,
+        "total_position_value_long": position_value_long,
+        "total_position_value_short": position_value_short,
+        "total_position_value": position_value_long + position_value_short,
+        "unrealised_pnl_long": unrealised_pnl_long,
+        "unrealised_pnl_short": unrealised_pnl_short,
+        "total_unrealised_pnl": unrealised_pnl_long + unrealised_pnl_short
+    }
+    
+    # Формирование итогового результата
+    result = {
+        "balance": balance_info,
+        "positions": positions_info
+    }
+    
+    # Красивый вывод сводки
+    print("\n" + "=" * 70)
+    print("СВОДКА ПО АККАУНТУ")
+    print("=" * 70)
+    
+    print("\n--- БАЛАНС ---")
+    print(f"Total Wallet Balance:  {balance_info['totalWalletBalance']}")
+    print(f"Total Margin Balance:  {balance_info['totalMarginBalance']}")
+    print(f"Total Perp UPL:        {balance_info['totalPerpUPL']}")
+    print(f"Total Equity:          {balance_info['totalEquity']}")
+    
+    if balance_info["coins"]:
+        print(f"\nМонеты ({len(balance_info['coins'])}):")
+        for coin in balance_info["coins"]:
+            equity = float(coin["equity"])
+            if equity > 0:  # Показываем только монеты с балансом
+                print(f"  {coin['coin']:8} - Equity: {coin['equity']}")
+    
+    print("\n--- ПОЗИЦИИ ---")
+    print(f"Открытых позиций: {len(open_positions)}")
+    
+    if open_positions:
+        print("\nОткрытые позиции:")
+        for pos in open_positions:
+            pnl_sign = "+" if float(pos["unrealisedPnl"]) >= 0 else ""
+            print(f"  {pos['symbol']:12} {pos['side']:4} | Size: {pos['size']:12} | "
+                  f"Value: {pos['positionValue']:12} | Entry: {pos['avgPrice']:12} | "
+                  f"PnL: {pnl_sign}{pos['unrealisedPnl']}")
+    
+    print(f"\nPosition Value (Long):   {position_value_long:.4f}")
+    print(f"Position Value (Short):  {position_value_short:.4f}")
+    print(f"Total Position Value:    {position_value_long + position_value_short:.4f}")
+    
+    print(f"\nUnrealised PnL (Long):   {unrealised_pnl_long:+.4f}")
+    print(f"Unrealised PnL (Short):  {unrealised_pnl_short:+.4f}")
+    print(f"Total Unrealised PnL:    {unrealised_pnl_long + unrealised_pnl_short:+.4f}")
+    
+    print("\n" + "=" * 70)
+    
+    return result
+
+
+def format_account_summary_html(summary_data):
+    """Форматирование результата get_account_summary() в HTML таблицы
+    
+    Args:
+        summary_data: Результат функции get_account_summary()
+    
+    Returns:
+        str: HTML код с таблицами в стиле Windows 95
+    """
+    if not summary_data:
+        return "<p>Нет данных для отображения</p>"
+    
+    balance = summary_data.get("balance", {})
+    positions = summary_data.get("positions", {})
+    
+    html = []
+    
+    # Заголовок
+    html.append('<div style="margin: 20px 0;">')
+    html.append('<h2 style="color: white; background: linear-gradient(to bottom, #000080, #1084d0); padding: 3px 5px; margin: 0 0 10px 0; font-family: \'MS Sans Serif\', sans-serif;">Сводка по аккаунту</h2>')
+    
+    # Информация об API ключе
+    try:
+        api_info = exchange.query_api_key_info(summary_data.get("api_key", ""), summary_data.get("api_secret", ""))
+        if api_info:
+            html.append('<div style="background-color: #c0c0c0; padding: 5px; margin-bottom: 10px; border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff;">')
+            html.append('<p style="margin: 2px 0; font-size: 10px;"><strong>API Key:</strong> ' + api_info.get('apiKey', 'N/A')[:20] + '...</p>')
+            html.append('<p style="margin: 2px 0; font-size: 10px;"><strong>Note:</strong> ' + str(api_info.get('note', 'N/A')) + '</p>')
+            html.append('<p style="margin: 2px 0; font-size: 10px;"><strong>User ID:</strong> ' + str(api_info.get('userID', 'N/A')) + ' | <strong>VIP Level:</strong> ' + str(api_info.get('vipLevel', 'N/A')) + '</p>')
+            html.append('<p style="margin: 2px 0; font-size: 10px;"><strong>Read Only:</strong> ' + ('Yes' if api_info.get('readOnly') == 1 else 'No') + ' | <strong>Unified:</strong> ' + str(api_info.get('unified', 'N/A')) + '</p>')
+            html.append('</div>')
+    except Exception as ex:
+        print(f"Ошибка получения информации об API ключе: {ex}")
+    
+    # Баланс
+    html.append('<h3 style="font-family: \'MS Sans Serif\', sans-serif; margin: 15px 0 5px 0;">Баланс</h3>')
+    html.append('<div style="background-color: #c0c0c0; padding: 5px; margin-bottom: 10px; border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff;">')
+    
+    html.append(f'<p style="margin: 2px 0; font-size: 10px;"><strong>Total Wallet Balance:</strong> {balance.get("totalWalletBalance", "0")}</p>')
+    html.append(f'<p style="margin: 2px 0; font-size: 10px;"><strong>Total Margin Balance:</strong> {balance.get("totalMarginBalance", "0")}</p>')
+    
+    total_perp_upl = float(balance.get("totalPerpUPL", "0"))
+    color = "green" if total_perp_upl >= 0 else "red"
+    sign = "+" if total_perp_upl >= 0 else ""
+    html.append(f'<p style="margin: 2px 0; font-size: 10px;"><strong>Total Perp UPL:</strong> <span style="color: {color}; font-weight: bold;">{sign}{balance.get("totalPerpUPL", "0")}</span></p>')
+    
+    html.append(f'<p style="margin: 2px 0; font-size: 10px;"><strong>Total Equity:</strong> {balance.get("totalEquity", "0")}</p>')
+    
+    html.append('</div>')
+    
+    # Монеты
+    coins = balance.get("coins", [])
+    coins_with_balance = [c for c in coins if float(c.get("equity", "0")) > 0]
+    
+    if coins_with_balance:
+        html.append('<h3 style="font-family: \'MS Sans Serif\', sans-serif; margin: 15px 0 5px 0;">Монеты</h3>')
+        html.append('<div style="background-color: #c0c0c0; padding: 5px; margin-bottom: 10px; border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff;">')
+        
+        coins_str = ' | '.join([f"<strong>{coin.get('coin', 'N/A')}:</strong> {coin.get('equity', '0')}" for coin in coins_with_balance])
+        html.append(f'<p style="margin: 2px 0; font-size: 10px;">{coins_str}</p>')
+        
+        html.append('</div>')
+    
+    # Сводка по позициям
+    html.append('<h2 style="color: white; background: linear-gradient(to bottom, #000080, #1084d0); padding: 3px 5px; margin: 15px 0 10px 0; font-family: \'MS Sans Serif\', sans-serif;">Сводка по позициям</h2>')
+    html.append('<div style="background-color: #c0c0c0; padding: 5px; margin-bottom: 10px; border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff;">')
+    
+    # Лонги
+    pnl_long = positions.get("unrealised_pnl_long", 0)
+    color_long = "green" if pnl_long >= 0 else "red"
+    sign_long = "+" if pnl_long >= 0 else ""
+    html.append(f'<p style="margin: 2px 0; font-size: 10px;"><strong>Long:</strong> Value: {positions.get("total_position_value_long", 0):.4f} | PnL: <span style="color: {color_long}; font-weight: bold;">{sign_long}{pnl_long:.4f}</span></p>')
+    
+    # Шорты
+    pnl_short = positions.get("unrealised_pnl_short", 0)
+    color_short = "green" if pnl_short >= 0 else "red"
+    sign_short = "+" if pnl_short >= 0 else ""
+    html.append(f'<p style="margin: 2px 0; font-size: 10px;"><strong>Short:</strong> Value: {positions.get("total_position_value_short", 0):.4f} | PnL: <span style="color: {color_short}; font-weight: bold;">{sign_short}{pnl_short:.4f}</span></p>')
+    
+    # Итого
+    total_pnl = positions.get("total_unrealised_pnl", 0)
+    color_total = "green" if total_pnl >= 0 else "red"
+    sign_total = "+" if total_pnl >= 0 else ""
+    html.append(f'<p style="margin: 2px 0; font-size: 10px; border-top: 1px solid #808080; padding-top: 3px;"><strong>ИТОГО:</strong> Value: {positions.get("total_position_value", 0):.4f} | PnL: <span style="color: {color_total}; font-weight: bold;">{sign_total}{total_pnl:.4f}</span></p>')
+    
+    html.append('</div>')
+    
+    # Таблица открытых позиций
+    open_positions = positions.get("open_positions", [])
+    
+    if open_positions:
+        html.append('<h3 style="font-family: \'MS Sans Serif\', sans-serif; margin: 15px 0 5px 0;">Открытые позиции</h3>')
+        html.append('<table class="summary-table" style="width: 100%; margin-bottom: 20px;">')
+        html.append('<thead><tr>')
+        html.append('<th>Symbol</th>')
+        html.append('<th>Side</th>')
+        html.append('<th>Size</th>')
+        html.append('<th>Position Value</th>')
+        html.append('<th>Entry Price</th>')
+        html.append('<th>Unrealised PnL</th>')
+        html.append('</tr></thead>')
+        html.append('<tbody>')
+        
+        for pos in open_positions:
+            side = pos.get("side", "N/A")
+            side_color = "#008000" if side == "Buy" else "#FF0000"
+            pnl = float(pos.get("unrealisedPnl", "0"))
+            pnl_color = "green" if pnl >= 0 else "red"
+            pnl_sign = "+" if pnl >= 0 else ""
+            
+            html.append('<tr>')
+            html.append(f'<td><strong>{pos.get("symbol", "N/A")}</strong></td>')
+            html.append(f'<td style="color: {side_color}; font-weight: bold;">{side}</td>')
+            html.append(f'<td style="text-align: right;">{pos.get("size", "0")}</td>')
+            html.append(f'<td style="text-align: right;">{pos.get("positionValue", "0")}</td>')
+            html.append(f'<td style="text-align: right;">{pos.get("avgPrice", "0")}</td>')
+            html.append(f'<td style="text-align: right; font-weight: bold; color: {pnl_color};">{pnl_sign}{pos.get("unrealisedPnl", "0")}</td>')
+            html.append('</tr>')
+        
+        html.append('</tbody></table>')
+    else:
+        html.append('<p style="font-family: \'MS Sans Serif\', sans-serif; margin: 10px 0;">Нет открытых позиций</p>')
+    
+    html.append('</div>')
+    
+    return '\n'.join(html)
+

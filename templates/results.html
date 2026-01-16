@@ -6,6 +6,20 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+    <!-- Account Summary Window -->
+    {% if account_summary_html %}
+    <div class="window">
+        <div class="title-bar">
+            <div class="title-bar-text">Account Summary - Balance & Positions</div>
+        </div>
+        <div class="window-body">
+            <div style="font-size: 11px;">
+                {{ account_summary_html|safe }}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
     <!-- Graph Window -->
     <div class="window">
         <div class="title-bar">

@@ -1001,3 +1001,193 @@ def query_api_key_info(api_key, api_secret):
     else:
         print(f"Ошибка API: {response}")
         return {}
+
+
+# ============================================================================
+# Функции для работы с балансом кошелька /v5/account/wallet-balance
+# ============================================================================
+
+def get_wallet_balance(api_key, api_secret, account_type="UNIFIED", coin=None):
+    """Получение баланса кошелька
+    
+    Args:
+        api_key: API ключ
+        api_secret: API секрет
+        account_type: Тип аккаунта (UNIFIED, CONTRACT, SPOT, INVESTMENT, OPTION, FUND)
+        coin: Название монеты (опционально, для фильтрации по конкретной монете)
+    
+    Returns:
+        dict: Информация о балансе кошелька
+    """
+    endpoint = "/v5/account/wallet-balance"
+    params = {
+        "accountType": account_type
+    }
+    
+    if coin:
+        params["coin"] = coin
+
+    response = send_request(api_key, api_secret, endpoint, params)
+
+    if response and response.get("retCode") == 0:
+        result = response.get("result", {})
+        
+        # Форматированный вывод информации
+        if result and result.get("list"):
+            print(f"\n=== Баланс кошелька ({account_type}) ===")
+            
+            for account in result.get("list", []):
+                print(f"\nAccount Type: {account.get('accountType', 'N/A')}")
+                print(f"Account LTV: {account.get('accountLTV', 'N/A')}")
+                print(f"Account IMR: {account.get('accountIMR', 'N/A')}")
+                print(f"Account MMR: {account.get('accountMMR', 'N/A')}")
+                print(f"Total Equity: {account.get('totalEquity', 'N/A')}")
+                print(f"Total Wallet Balance: {account.get('totalWalletBalance', 'N/A')}")
+                print(f"Total Margin Balance: {account.get('totalMarginBalance', 'N/A')}")
+                print(f"Total Available Balance: {account.get('totalAvailableBalance', 'N/A')}")
+                print(f"Total Perp UPL: {account.get('totalPerpUPL', 'N/A')}")
+                print(f"Total Initial Margin: {account.get('totalInitialMargin', 'N/A')}")
+                print(f"Total Maintenance Margin: {account.get('totalMaintenanceMargin', 'N/A')}")
+                
+                coins = account.get("coin", [])
+                if coins:
+                    print(f"\nМонеты ({len(coins)}):")
+                    for coin_data in coins:
+                        print(f"  {coin_data.get('coin', 'N/A')}:")
+                        print(f"    Equity: {coin_data.get('equity', 'N/A')}")
+                        print(f"    UsdValue: {coin_data.get('usdValue', 'N/A')}")
+                        print(f"    Wallet Balance: {coin_data.get('walletBalance', 'N/A')}")
+                        print(f"    Available: {coin_data.get('availableToWithdraw', 'N/A')}")
+                        print(f"    Borrowed: {coin_data.get('borrowed', 'N/A')}")
+                        print(f"    Free: {coin_data.get('free', 'N/A')}")
+                        print(f"    Locked: {coin_data.get('locked', 'N/A')}")
+                
+                print("-" * 50)
+            
+            print("=" * 50)
+        
+        return result
+    else:
+        print(f"Ошибка API: {response}")
+        return {}
+
+
+# ============================================================================
+# Функции для работы со списком позиций /v5/position/list
+# ============================================================================
+
+def get_position_list(api_key, api_secret, category="linear", symbol=None, 
+                     base_coin=None, settle_coin=None, limit=200, cursor=None):
+    """Получение списка позиций
+    
+    Args:
+        api_key: API ключ
+        api_secret: API секрет
+        category: Тип продукта (linear, inverse, option)
+        symbol: Символ (опционально)
+        base_coin: Базовая монета (для option)
+        settle_coin: Монета расчета (опционально)
+        limit: Лимит записей (макс 200)
+        cursor: Курсор для пагинации
+    
+    Returns:
+        dict: Результат с информацией о позициях
+    """
+    endpoint = "/v5/position/list"
+    params = {
+        "category": category,
+        "limit": min(limit, 200)
+    }
+    
+    if symbol:
+        params["symbol"] = symbol
+    if base_coin:
+        params["baseCoin"] = base_coin
+    if settle_coin:
+        params["settleCoin"] = settle_coin
+    if cursor:
+        params["cursor"] = cursor
+
+    response = send_request(api_key, api_secret, endpoint, params)
+
+    if response and response.get("retCode") == 0:
+        return response.get("result", {})
+    else:
+        print(f"Ошибка API: {response}")
+        return {}
+
+
+def get_all_positions(api_key, api_secret, category="linear", symbol=None,
+                     base_coin=None, settle_coin="USDT"):
+    """Получение всех позиций с пагинацией
+    
+    Args:
+        api_key: API ключ
+        api_secret: API секрет
+        category: Тип продукта (linear, inverse, option)
+        symbol: Символ (опционально)
+        base_coin: Базовая монета (для option)
+        settle_coin: Монета расчета (опционально)
+    
+    Returns:
+        list: Список всех позиций
+    """
+    all_positions = []
+    cursor = None
+    page = 1
+
+    while True:
+        print(f"  Загрузка страницы {page}...")
+
+        result = get_position_list(
+            api_key, api_secret, category, symbol,
+            base_coin, settle_coin, limit=200, cursor=cursor
+        )
+
+        if not result:
+            break
+
+        positions_list = result.get("list", [])
+
+        if not positions_list:
+            break
+
+        all_positions.extend(positions_list)
+        print(f"  Получено позиций: {len(positions_list)}")
+
+        # Проверка наличия следующей страницы
+        next_cursor = result.get("nextPageCursor")
+        if not next_cursor:
+            break
+
+        cursor = next_cursor
+        page += 1
+
+        # Небольшая задержка между запросами
+        time.sleep(0.2)
+
+    print(f"  Всего позиций: {len(all_positions)}")
+    
+    # Форматированный вывод
+    if all_positions:
+        print(f"\n=== Позиции ({category}) ===")
+        for pos in all_positions:
+            print(f"\n{pos.get('symbol', 'N/A')}:")
+            print(f"  Side: {pos.get('side', 'N/A')}")
+            print(f"  Size: {pos.get('size', 'N/A')}")
+            print(f"  Position Value: {pos.get('positionValue', 'N/A')}")
+            print(f"  Entry Price: {pos.get('avgPrice', 'N/A')}")
+            print(f"  Mark Price: {pos.get('markPrice', 'N/A')}")
+            print(f"  Liq Price: {pos.get('liqPrice', 'N/A')}")
+            print(f"  Unrealised PnL: {pos.get('unrealisedPnl', 'N/A')}")
+            print(f"  Cumulative PnL: {pos.get('cumRealisedPnl', 'N/A')}")
+            print(f"  Leverage: {pos.get('leverage', 'N/A')}")
+            print(f"  Position Status: {pos.get('positionStatus', 'N/A')}")
+            print(f"  TP/SL Mode: {pos.get('tpslMode', 'N/A')}")
+            print(f"  Take Profit: {pos.get('takeProfit', 'N/A')}")
+            print(f"  Stop Loss: {pos.get('stopLoss', 'N/A')}")
+            print(f"  Trailing Stop: {pos.get('trailingStop', 'N/A')}")
+        print("=" * 50)
+    
+    return all_positions
+
