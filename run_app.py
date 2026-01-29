@@ -445,14 +445,28 @@ async def profit_process(
         user_id = exchange.get_user_id(api_key, api_secret)
         metadata = data_profit.get_metadata(user_id)
         
+        # Sort by_symbol by PnL descending
+        by_symbol_sorted = sorted(
+            result.get('by_symbol', {}).items(),
+            key=lambda x: x[1].get('pnl', 0),
+            reverse=True
+        )
+        
+        # Sort by_type by absolute amount descending
+        by_type_sorted = sorted(
+            result.get('by_type', {}).items(),
+            key=lambda x: abs(x[1]),
+            reverse=True
+        )
+        
         return templates.TemplateResponse("profit_results.html", {
             "request": request,
             "result": result,
             "profitability_chart_html": profitability_chart_html,
             "balance_chart_html": balance_chart_html,
             "account_summary_html": account_summary_html,
-            "by_type": result.get('by_type', {}),
-            "by_symbol": result.get('by_symbol', {}),
+            "by_type": by_type_sorted,
+            "by_symbol": by_symbol_sorted,
             "cache_info": metadata,
             "api_key": api_key,
             "api_secret": api_secret,

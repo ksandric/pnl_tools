@@ -208,7 +208,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for trans_type, amount in by_type|dictsort(by='value', reverse=true) %}
+                            {% for trans_type, amount in by_type %}
                             <tr>
                                 <td>{{ trans_type }}</td>
                                 <td class="right {% if amount > 0 %}positive{% elif amount < 0 %}negative{% endif %}">
@@ -235,7 +235,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for symbol, data in by_symbol|dictsort(by='value', reverse=true, case_sensitive=false) %}
+                            {% for symbol, data in by_symbol %}
                             <tr>
                                 <td>{{ symbol }}</td>
                                 <td class="right {% if data.pnl > 0 %}positive{% elif data.pnl < 0 %}negative{% endif %}">
