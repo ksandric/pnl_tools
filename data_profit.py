@@ -766,11 +766,18 @@ def analyze_trading_performance(api_key, api_secret,
     effective_balance = current_balance + unrealized_pnl
     
     # Рассчитываем текущую доходность с учётом unrealized PnL
-    capital_base = profitability_data.get("capital_base", profitability_data.get("initial_balance", 0))
-    if capital_base > 0:
-        # Trading PnL с учётом нереализованного
-        current_trading_pnl = effective_balance - capital_base
-        current_profit_percent_with_unrealized = (current_trading_pnl / capital_base) * 100
+    # Используем ту же формулу что и для линии доходности:
+    # trading_pnl = balance - (cumulative_deposits - cumulative_withdrawals)
+    # profit_pct = (trading_pnl / initial_balance) * 100
+    
+    total_deposits = profitability_data.get("total_deposits", 0)
+    total_withdrawals = profitability_data.get("total_withdrawals", 0)
+    initial_balance = profitability_data.get("initial_balance", 0)
+    
+    if initial_balance > 0:
+        # Trading PnL с учётом нереализованного - та же формула что в calculate_profitability_chart
+        current_trading_pnl = effective_balance - (total_deposits - total_withdrawals)
+        current_profit_percent_with_unrealized = (current_trading_pnl / initial_balance) * 100
     else:
         current_profit_percent_with_unrealized = 0.0
     
