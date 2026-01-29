@@ -737,12 +737,22 @@ def analyze_trading_performance(api_key, api_secret,
     # Данные для графика доходности
     profitability_data = calculate_profitability_chart(transaction_logs)
     
-    # Получаем текущий баланс
+    # Получаем текущий баланс и unrealized PnL
+    current_balance = 0.0
+    unrealized_pnl = 0.0
+    total_equity = 0.0
+    total_margin_balance = 0.0
+    
     try:
         wallet_balance = exchange.get_wallet_balance(api_key, api_secret, account_type="UNIFIED")
-        current_balance = 0.0
         if wallet_balance and wallet_balance.get("list"):
             for account in wallet_balance.get("list", []):
+                # Общие показатели аккаунта
+                total_equity = float(account.get("totalEquity", 0) or 0)
+                total_margin_balance = float(account.get("totalMarginBalance", 0) or 0)
+                unrealized_pnl = float(account.get("totalPerpUPL", 0) or 0)
+                
+                # Баланс по конкретной валюте
                 for coin_data in account.get("coin", []):
                     if coin_data.get("coin") == currency:
                         current_balance = float(coin_data.get("walletBalance", 0) or 0)
@@ -750,6 +760,26 @@ def analyze_trading_performance(api_key, api_secret,
     except Exception as e:
         print(f"Ошибка получения баланса: {e}")
         current_balance = profitability_data.get("final_balance", 0)
+    
+    # Добавляем текущую точку на график (с учётом unrealized PnL)
+    # Эффективный баланс = текущий баланс + unrealized PnL
+    effective_balance = current_balance + unrealized_pnl
+    
+    # Рассчитываем текущую доходность с учётом unrealized PnL
+    capital_base = profitability_data.get("capital_base", profitability_data.get("initial_balance", 0))
+    if capital_base > 0:
+        # Trading PnL с учётом нереализованного
+        current_trading_pnl = effective_balance - capital_base
+        current_profit_percent_with_unrealized = (current_trading_pnl / capital_base) * 100
+    else:
+        current_profit_percent_with_unrealized = 0.0
+    
+    # Добавляем текущую точку в данные графика
+    profitability_data["current_timestamp"] = datetime.now(timezone.utc)
+    profitability_data["current_balance"] = current_balance
+    profitability_data["effective_balance"] = effective_balance
+    profitability_data["unrealized_pnl"] = unrealized_pnl
+    profitability_data["current_profit_percent_with_unrealized"] = current_profit_percent_with_unrealized
     
     result = {
         "period": {
@@ -759,6 +789,13 @@ def analyze_trading_performance(api_key, api_secret,
         "currency": currency,
         "current_balance": current_balance,
         "initial_balance": profitability_data.get("initial_balance", 0),
+        
+        # Текущее состояние маржи
+        "unrealized_pnl": unrealized_pnl,
+        "effective_balance": effective_balance,
+        "total_equity": total_equity,
+        "total_margin_balance": total_margin_balance,
+        "current_profit_percent_with_unrealized": current_profit_percent_with_unrealized,
         
         # Метрики торговли
         "trading_pnl": metrics["trading_pnl"],
@@ -797,6 +834,8 @@ def analyze_trading_performance(api_key, api_secret,
     print(f"Период: {result['period']['start']} - {result['period']['end']}")
     print(f"Валюта: {currency}")
     print(f"Текущий баланс: {current_balance:.4f}")
+    print(f"Unrealized PnL: {unrealized_pnl:.4f}")
+    print(f"Эффективный баланс: {effective_balance:.4f}")
     print(f"Начальный баланс: {result['initial_balance']:.4f}")
     print()
     print(f"Реализованный PnL: {metrics['trading_pnl']:.4f}")
@@ -808,7 +847,8 @@ def analyze_trading_performance(api_key, api_secret,
     print(f"Депозиты: {total_deposits:.4f} ({len(deposits)} шт)")
     print(f"Выводы: {total_withdrawals:.4f} ({len(withdrawals)} шт)")
     print()
-    print(f"ДОХОДНОСТЬ: {result['total_profit_percent']:.2f}%")
+    print(f"ДОХОДНОСТЬ (реализованная): {result['total_profit_percent']:.2f}%")
+    print(f"ДОХОДНОСТЬ (с unrealized): {current_profit_percent_with_unrealized:.2f}%")
     print("-" * 40)
     
     return result
@@ -824,7 +864,9 @@ def get_performance_summary_html(result):
         str: HTML-код сводки
     """
     profit_color = "green" if result['net_trading_profit'] >= 0 else "red"
+    unrealized_color = "green" if result.get('unrealized_pnl', 0) >= 0 else "red"
     pct_color = "green" if result['total_profit_percent'] >= 0 else "red"
+    pct_unrealized_color = "green" if result.get('current_profit_percent_with_unrealized', 0) >= 0 else "red"
     
     html = f'''
     <div style="font-family: 'MS Sans Serif', Arial, sans-serif; font-size: 12px;">
@@ -841,21 +883,33 @@ def get_performance_summary_html(result):
                 </td>
             </tr>
             <tr>
-                <td style="padding: 5px; border: 1px solid #808080;">Начальный баланс:</td>
+                <td style="padding: 5px; border: 1px solid #808080;">Капитальная база (депозиты - выводы):</td>
                 <td style="padding: 5px; border: 1px solid #808080; text-align: right;">
                     {result['initial_balance']:.4f}
                 </td>
             </tr>
             <tr>
-                <td style="padding: 5px; border: 1px solid #808080;">Текущий баланс:</td>
+                <td style="padding: 5px; border: 1px solid #808080;">Текущий баланс кошелька:</td>
                 <td style="padding: 5px; border: 1px solid #808080; text-align: right;">
                     {result['current_balance']:.4f}
+                </td>
+            </tr>
+            <tr style="background: #ffffcc;">
+                <td style="padding: 5px; border: 1px solid #808080;"><b>⚡ Нереализованный PnL (открытые позиции):</b></td>
+                <td style="padding: 5px; border: 1px solid #808080; text-align: right; color: {unrealized_color}; font-weight: bold;">
+                    {result.get('unrealized_pnl', 0):+.4f}
+                </td>
+            </tr>
+            <tr style="background: #ffffcc;">
+                <td style="padding: 5px; border: 1px solid #808080;"><b>💰 Эффективный баланс (баланс + unrealized):</b></td>
+                <td style="padding: 5px; border: 1px solid #808080; text-align: right; font-weight: bold;">
+                    {result.get('effective_balance', 0):.4f}
                 </td>
             </tr>
             <tr style="background: #ffffff;">
                 <td style="padding: 5px; border: 1px solid #808080;"><b>Реализованный PnL:</b></td>
                 <td style="padding: 5px; border: 1px solid #808080; text-align: right; color: {profit_color}; font-weight: bold;">
-                    {result['trading_pnl']:.4f}
+                    {result['trading_pnl']:+.4f}
                 </td>
             </tr>
             <tr>
@@ -867,13 +921,13 @@ def get_performance_summary_html(result):
             <tr>
                 <td style="padding: 5px; border: 1px solid #808080;">Фандинг:</td>
                 <td style="padding: 5px; border: 1px solid #808080; text-align: right;">
-                    {result['funding_fees']:.4f}
+                    {result['funding_fees']:+.4f}
                 </td>
             </tr>
             <tr style="background: #ffffff;">
-                <td style="padding: 5px; border: 1px solid #808080;"><b>Чистый профит:</b></td>
+                <td style="padding: 5px; border: 1px solid #808080;"><b>Чистый профит (реализованный):</b></td>
                 <td style="padding: 5px; border: 1px solid #808080; text-align: right; color: {profit_color}; font-weight: bold;">
-                    {result['net_trading_profit']:.4f}
+                    {result['net_trading_profit']:+.4f}
                 </td>
             </tr>
             <tr>
@@ -895,10 +949,18 @@ def get_performance_summary_html(result):
                 </td>
             </tr>
             <tr style="background: #000080; color: white;">
-                <td style="padding: 8px; border: 1px solid #808080;"><b>ДОХОДНОСТЬ:</b></td>
+                <td style="padding: 8px; border: 1px solid #808080;"><b>📊 ДОХОДНОСТЬ (реализованная):</b></td>
                 <td style="padding: 8px; border: 1px solid #808080; text-align: right; font-size: 16px; font-weight: bold;">
                     <span style="color: {'lime' if result['total_profit_percent'] >= 0 else '#ff6666'};">
                         {result['total_profit_percent']:+.2f}%
+                    </span>
+                </td>
+            </tr>
+            <tr style="background: #800080; color: white;">
+                <td style="padding: 8px; border: 1px solid #808080;"><b>⚡ ДОХОДНОСТЬ (с unrealized PnL):</b></td>
+                <td style="padding: 8px; border: 1px solid #808080; text-align: right; font-size: 16px; font-weight: bold;">
+                    <span style="color: {'lime' if result.get('current_profit_percent_with_unrealized', 0) >= 0 else '#ff6666'};">
+                        {result.get('current_profit_percent_with_unrealized', 0):+.2f}%
                     </span>
                 </td>
             </tr>

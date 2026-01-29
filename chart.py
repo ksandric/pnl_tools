@@ -280,11 +280,11 @@ def create_profitability_chart(profitability_data, show_balance=False):
             x=timestamps,
             y=profitability_pct,
             mode='lines',
-            name='Доходность',
+            name='Доходность (реализованная)',
             line=dict(color=line_color, width=2.5),
             fill='tozeroy',
             fillcolor=fill_color,
-            hovertemplate='<b>Доходность</b><br>' +
+            hovertemplate='<b>Доходность (реализованная)</b><br>' +
                           'Время: %{x}<br>' +
                           'Доходность: %{y:.2f}%<br>' +
                           '<extra></extra>'
@@ -293,25 +293,71 @@ def create_profitability_chart(profitability_data, show_balance=False):
         # Линия нуля
         fig.add_hline(y=0, line_dash="dash", line_color="gray", line_width=1)
         
-        # Аннотация с итоговой доходностью
-        initial_balance = profitability_data.get('initial_balance', 0)
-        final_balance = profitability_data.get('final_adjusted_balance', 0)
+        # Добавляем текущую точку с unrealized PnL если есть
+        current_timestamp = profitability_data.get('current_timestamp')
+        current_profit_with_unrealized = profitability_data.get('current_profit_percent_with_unrealized')
+        unrealized_pnl = profitability_data.get('unrealized_pnl', 0)
         
-        fig.add_annotation(
-            x=timestamps[-1] if timestamps else None,
-            y=final_profit,
-            text=f"<b>{final_profit:+.2f}%</b>",
-            showarrow=True,
-            arrowhead=2,
-            arrowsize=1,
-            arrowwidth=2,
-            arrowcolor=line_color,
-            font=dict(size=14, color=line_color),
-            bgcolor='white',
-            bordercolor=line_color,
-            borderwidth=1,
-            borderpad=4
-        )
+        if current_timestamp and current_profit_with_unrealized is not None:
+            # Цвет точки с unrealized
+            unrealized_color = '#9C27B0'  # Фиолетовый для unrealized
+            
+            fig.add_trace(go.Scatter(
+                x=[current_timestamp],
+                y=[current_profit_with_unrealized],
+                mode='markers',
+                name=f'Сейчас (с unrealized PnL: {unrealized_pnl:+.2f})',
+                marker=dict(
+                    color=unrealized_color,
+                    size=15,
+                    symbol='star',
+                    line=dict(color='white', width=2)
+                ),
+                hovertemplate='<b>⚡ СЕЙЧАС (с unrealized PnL)</b><br>' +
+                              'Время: %{x}<br>' +
+                              f'Unrealized PnL: {unrealized_pnl:+.4f}<br>' +
+                              'Доходность: %{y:.2f}%<br>' +
+                              '<extra></extra>'
+            ))
+            
+            # Аннотация для текущей точки с unrealized
+            fig.add_annotation(
+                x=current_timestamp,
+                y=current_profit_with_unrealized,
+                text=f"<b>⚡ {current_profit_with_unrealized:+.2f}%</b><br><i>(unrealized: {unrealized_pnl:+.2f})</i>",
+                showarrow=True,
+                arrowhead=2,
+                arrowsize=1,
+                arrowwidth=2,
+                arrowcolor=unrealized_color,
+                font=dict(size=12, color=unrealized_color),
+                bgcolor='white',
+                bordercolor=unrealized_color,
+                borderwidth=2,
+                borderpad=4,
+                ax=60,
+                ay=-40
+            )
+        
+        # Аннотация с итоговой реализованной доходностью
+        initial_balance = profitability_data.get('initial_balance', 0)
+        
+        if timestamps:
+            fig.add_annotation(
+                x=timestamps[-1],
+                y=final_profit,
+                text=f"<b>{final_profit:+.2f}%</b>",
+                showarrow=True,
+                arrowhead=2,
+                arrowsize=1,
+                arrowwidth=2,
+                arrowcolor=line_color,
+                font=dict(size=14, color=line_color),
+                bgcolor='white',
+                bordercolor=line_color,
+                borderwidth=1,
+                borderpad=4
+            )
         
         fig.update_layout(
             height=500,
@@ -320,8 +366,14 @@ def create_profitability_chart(profitability_data, show_balance=False):
             hovermode='x unified',
             template='simple_white',
             title=dict(
-                text=f"График доходности | Начальный баланс: {initial_balance:.2f}",
+                text=f"График доходности | Капитальная база: {initial_balance:.2f}",
                 font=dict(size=14)
+            ),
+            legend=dict(
+                yanchor="top",
+                y=0.99,
+                xanchor="left",
+                x=0.01
             )
         )
 
@@ -382,14 +434,75 @@ def create_balance_chart(profitability_data):
                           '<extra></extra>'
         ))
     
+    # Добавляем текущую точку с effective balance (баланс + unrealized PnL)
+    current_timestamp = profitability_data.get('current_timestamp')
+    current_balance = profitability_data.get('current_balance', 0)
+    effective_balance = profitability_data.get('effective_balance', 0)
+    unrealized_pnl = profitability_data.get('unrealized_pnl', 0)
+    
+    if current_timestamp and effective_balance:
+        # Точка текущего баланса
+        fig.add_trace(go.Scatter(
+            x=[current_timestamp],
+            y=[current_balance],
+            mode='markers',
+            name=f'Текущий баланс: {current_balance:.2f}',
+            marker=dict(
+                color='#1976D2',
+                size=12,
+                symbol='circle',
+                line=dict(color='white', width=2)
+            ),
+            hovertemplate='<b>💰 Текущий баланс</b><br>' +
+                          'Время: %{x}<br>' +
+                          f'Баланс: {current_balance:.4f}<br>' +
+                          '<extra></extra>'
+        ))
+        
+        # Точка эффективного баланса (с unrealized)
+        fig.add_trace(go.Scatter(
+            x=[current_timestamp],
+            y=[effective_balance],
+            mode='markers',
+            name=f'С unrealized PnL: {effective_balance:.2f}',
+            marker=dict(
+                color='#9C27B0',
+                size=15,
+                symbol='star',
+                line=dict(color='white', width=2)
+            ),
+            hovertemplate='<b>⚡ Эффективный баланс (с unrealized)</b><br>' +
+                          'Время: %{x}<br>' +
+                          f'Баланс: {effective_balance:.4f}<br>' +
+                          f'Unrealized PnL: {unrealized_pnl:+.4f}<br>' +
+                          '<extra></extra>'
+        ))
+        
+        # Аннотация
+        fig.add_annotation(
+            x=current_timestamp,
+            y=effective_balance,
+            text=f"<b>⚡ {effective_balance:.2f}</b><br><i>unrealized: {unrealized_pnl:+.2f}</i>",
+            showarrow=True,
+            arrowhead=2,
+            arrowcolor='#9C27B0',
+            font=dict(size=11, color='#9C27B0'),
+            bgcolor='white',
+            bordercolor='#9C27B0',
+            borderwidth=1,
+            borderpad=3,
+            ax=50,
+            ay=-30
+        )
+    
     initial_balance = profitability_data.get('initial_balance', 0)
     
-    # Линия начального баланса
+    # Линия капитальной базы
     fig.add_hline(
         y=initial_balance, 
         line_dash="dot", 
         line_color="green",
-        annotation_text=f"Начальный: {initial_balance:.2f}",
+        annotation_text=f"Капитальная база: {initial_balance:.2f}",
         annotation_position="bottom right"
     )
     
@@ -406,7 +519,7 @@ def create_balance_chart(profitability_data):
             x=0.01
         ),
         title=dict(
-            text="Динамика баланса",
+            text="Динамика баланса | ⚡ = с учётом unrealized PnL",
             font=dict(size=14)
         )
     )
