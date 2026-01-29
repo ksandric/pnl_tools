@@ -57,6 +57,18 @@
     </style>
 </head>
 <body>
+    {% if account_summary_html %}
+    <!-- Account Summary Window -->
+    <div class="window">
+        <div class="title-bar">
+            <div class="title-bar-text">Account Summary</div>
+        </div>
+        <div class="window-body">
+            {{ account_summary_html|safe }}
+        </div>
+    </div>
+    {% endif %}
+    
     <!-- Summary Window -->
     <div class="window">
         <div class="title-bar">
@@ -169,18 +181,6 @@
             <div class="graph-container">
                 {{ balance_chart_html|safe }}
             </div>
-        </div>
-    </div>
-    {% endif %}
-    
-    {% if account_summary_html %}
-    <!-- Account Summary Window -->
-    <div class="window">
-        <div class="title-bar">
-            <div class="title-bar-text">Account Summary</div>
-        </div>
-        <div class="window-body">
-            {{ account_summary_html|safe }}
         </div>
     </div>
     {% endif %}
