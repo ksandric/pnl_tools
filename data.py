@@ -982,15 +982,20 @@ def format_account_summary_html(summary_data):
             pnl_color = "green" if pnl >= 0 else "red"
             pnl_sign = "+" if pnl >= 0 else ""
             
+            position_value = float(pos.get("positionValue", "0"))
+            total_wallet = float(balance.get("totalWalletBalance", 1))
+            rate_cost = (position_value / total_wallet) * 100 if total_wallet > 0 else 0
+            pnl_percent = (pnl / total_wallet) * 100 if total_wallet > 0 else 0
+            
             html.append('<tr>')
             html.append(f'<td><strong>{pos.get("symbol", "N/A")}</strong></td>')
             html.append(f'<td style="color: {side_color}; font-weight: bold;">{side}</td>')
             html.append(f'<td style="text-align: right;">{pos.get("size", "0")}</td>')
-            html.append(f'<td style="text-align: right;">{pos.get("positionValue", "0")}</td>')
-            html.append(f'<td style="text-align: right;">{(pos.get("positionValue", "0")/float(balance["totalWalletBalance"]))*100:.2f}</td>')
+            html.append(f'<td style="text-align: right;">{position_value:.4f}</td>')
+            html.append(f'<td style="text-align: right;">{rate_cost:.2f}</td>')
             html.append(f'<td style="text-align: right;">{pos.get("avgPrice", "0")}</td>')
-            html.append(f'<td style="text-align: right; font-weight: bold; color: {pnl_color};">{pnl_sign}{pos.get("unrealisedPnl", "0")}</td>')
-            html.append(f'<td style="text-align: right; font-weight: bold; color: {pnl_color};">{pnl_sign}{(pnl/float(balance["totalWalletBalance"]))*100:.2f}</td>')
+            html.append(f'<td style="text-align: right; font-weight: bold; color: {pnl_color};">{pnl_sign}{pnl:.4f}</td>')
+            html.append(f'<td style="text-align: right; font-weight: bold; color: {pnl_color};">{pnl_sign}{pnl_percent:.2f}</td>')
             html.append('</tr>')
         
         html.append('</tbody></table>')
