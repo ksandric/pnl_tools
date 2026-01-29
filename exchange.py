@@ -1191,3 +1191,224 @@ def get_all_positions(api_key, api_secret, category="linear", symbol=None,
     
     return all_positions
 
+
+# ============================================================================
+# Функции для работы с Transaction Log /v5/account/transaction-log
+# ============================================================================
+
+def get_transaction_log(api_key, api_secret, account_type="UNIFIED", category=None,
+                        currency=None, base_coin=None, trans_type=None,
+                        start_time=None, end_time=None, limit=50, cursor=None):
+    """Получение одной страницы логов транзакций
+    
+    Args:
+        api_key: API ключ
+        api_secret: API секрет
+        account_type: Тип аккаунта (UNIFIED для UTA)
+        category: Тип продукта (spot, linear, inverse, option)
+        currency: Валюта (USDT, USDC, BTC и т.д.)
+        base_coin: Базовая монета (например BTC для BTCPERP)
+        trans_type: Тип транзакции (TRADE, SETTLEMENT, TRANSFER_IN, TRANSFER_OUT, и т.д.)
+        start_time: Начальное время в мс
+        end_time: Конечное время в мс
+        limit: Лимит записей (макс 50)
+        cursor: Курсор для пагинации
+    
+    Returns:
+        dict: Результат с логами транзакций
+    """
+    endpoint = "/v5/account/transaction-log"
+    params = {
+        "accountType": account_type,
+        "limit": min(limit, 50)
+    }
+    
+    if category:
+        params["category"] = category
+    if currency:
+        params["currency"] = currency
+    if base_coin:
+        params["baseCoin"] = base_coin
+    if trans_type:
+        params["type"] = trans_type
+    if start_time:
+        params["startTime"] = start_time
+    if end_time:
+        params["endTime"] = end_time
+    if cursor:
+        params["cursor"] = cursor
+
+    response = send_request(api_key, api_secret, endpoint, params)
+
+    if response and response.get("retCode") == 0:
+        return response.get("result", {})
+    else:
+        print(f"Ошибка API: {response}")
+        return {}
+
+
+def get_all_transaction_logs(api_key, api_secret, account_type="UNIFIED", category=None,
+                             currency=None, base_coin=None, trans_type=None,
+                             start_time=None, end_time=None):
+    """Получение всех логов транзакций с пагинацией и разбивкой на периоды по 7 дней
+    
+    Args:
+        api_key: API ключ
+        api_secret: API секрет
+        account_type: Тип аккаунта (UNIFIED для UTA)
+        category: Тип продукта (spot, linear, inverse, option)
+        currency: Валюта (USDT, USDC, BTC и т.д.)
+        base_coin: Базовая монета
+        trans_type: Тип транзакции
+        start_time: Начальное время в мс
+        end_time: Конечное время в мс
+    
+    Returns:
+        list: Список всех транзакций
+    """
+    # Если указаны временные рамки, проверяем их размер
+    if start_time and end_time:
+        # Максимальный диапазон - 7 дней в миллисекундах
+        max_range_ms = 7 * 24 * 60 * 60 * 1000
+        time_diff = end_time - start_time
+
+        # Если диапазон больше 7 дней, разбиваем на куски
+        if time_diff > max_range_ms:
+            print(f"Диапазон превышает 7 дней, разбиваем на периоды...")
+            all_data = []
+            current_start = start_time
+
+            while current_start < end_time:
+                current_end = min(current_start + max_range_ms, end_time)
+
+                print(
+                    f"\nЗагрузка периода: {datetime.fromtimestamp(current_start / 1000, tz=timezone.utc)} - {datetime.fromtimestamp(current_end / 1000, tz=timezone.utc)}")
+
+                period_data = get_all_transaction_logs_single_period(
+                    api_key, api_secret, account_type, category, currency,
+                    base_coin, trans_type, current_start, current_end
+                )
+
+                all_data.extend(period_data)
+                current_start = current_end + 1  # Переходим к следующему периоду
+
+                # Задержка между периодами
+                time.sleep(0.3)
+
+            print(f"\nВсего загружено записей за весь период: {len(all_data)}")
+            return all_data
+
+    # Если диапазон 7 дней или меньше (или не указан), используем обычную загрузку
+    return get_all_transaction_logs_single_period(
+        api_key, api_secret, account_type, category, currency,
+        base_coin, trans_type, start_time, end_time
+    )
+
+
+def get_all_transaction_logs_single_period(api_key, api_secret, account_type="UNIFIED",
+                                           category=None, currency=None, base_coin=None,
+                                           trans_type=None, start_time=None, end_time=None):
+    """Получение всех логов транзакций для одного периода (до 7 дней) с пагинацией"""
+    all_data = []
+    cursor = None
+    page = 1
+
+    while True:
+        print(f"  Загрузка страницы {page}...")
+
+        result = get_transaction_log(
+            api_key, api_secret, account_type, category, currency,
+            base_coin, trans_type, start_time, end_time, limit=50, cursor=cursor
+        )
+
+        if not result:
+            break
+
+        data_list = result.get("list", [])
+
+        if not data_list:
+            break
+
+        all_data.extend(data_list)
+        print(f"  Получено записей: {len(data_list)}")
+
+        # Проверка наличия следующей страницы
+        next_cursor = result.get("nextPageCursor")
+        if not next_cursor:
+            break
+
+        cursor = next_cursor
+        page += 1
+
+        # Небольшая задержка между запросами
+        time.sleep(0.2)
+
+    print(f"  Всего записей за период: {len(all_data)}")
+    return all_data
+
+
+def get_transaction_logs_today(api_key, api_secret, account_type="UNIFIED",
+                               category=None, currency=None):
+    """Получить логи транзакций за текущий день по UTC"""
+    start_ms, end_ms = get_current_day_utc()
+    print(
+        f"Период: {datetime.fromtimestamp(start_ms / 1000, tz=timezone.utc)} - {datetime.fromtimestamp(end_ms / 1000, tz=timezone.utc)}")
+    return get_all_transaction_logs(api_key, api_secret, account_type, category, currency,
+                                    start_time=start_ms, end_time=end_ms)
+
+
+def get_transaction_logs_yesterday(api_key, api_secret, account_type="UNIFIED",
+                                   category=None, currency=None):
+    """Получить логи транзакций за прошлый день по UTC"""
+    start_ms, end_ms = get_previous_day_utc()
+    print(
+        f"Период: {datetime.fromtimestamp(start_ms / 1000, tz=timezone.utc)} - {datetime.fromtimestamp(end_ms / 1000, tz=timezone.utc)}")
+    return get_all_transaction_logs(api_key, api_secret, account_type, category, currency,
+                                    start_time=start_ms, end_time=end_ms)
+
+
+def get_transaction_logs_current_month(api_key, api_secret, account_type="UNIFIED",
+                                       category=None, currency=None):
+    """Получить логи транзакций за текущий месяц по UTC"""
+    start_ms, end_ms = get_current_month_utc()
+    print(
+        f"Период: {datetime.fromtimestamp(start_ms / 1000, tz=timezone.utc)} - {datetime.fromtimestamp(end_ms / 1000, tz=timezone.utc)}")
+    return get_all_transaction_logs(api_key, api_secret, account_type, category, currency,
+                                    start_time=start_ms, end_time=end_ms)
+
+
+def get_transaction_logs_previous_month(api_key, api_secret, account_type="UNIFIED",
+                                        category=None, currency=None):
+    """Получить логи транзакций за прошлый месяц по UTC"""
+    start_ms, end_ms = get_previous_month_utc()
+    print(
+        f"Период: {datetime.fromtimestamp(start_ms / 1000, tz=timezone.utc)} - {datetime.fromtimestamp(end_ms / 1000, tz=timezone.utc)}")
+    return get_all_transaction_logs(api_key, api_secret, account_type, category, currency,
+                                    start_time=start_ms, end_time=end_ms)
+
+
+def get_transaction_logs_full_history(api_key, api_secret, account_type="UNIFIED",
+                                      category=None, currency=None):
+    """Получить логи транзакций за максимально доступный период (2 года)
+    
+    API поддерживает до 2 лет истории для Transaction Log
+    """
+    now = datetime.now(timezone.utc)
+    # 2 года назад (730 дней)
+    two_years_ago = now - timedelta(days=730)
+    
+    start_ms = int(two_years_ago.timestamp() * 1000)
+    end_ms = int(now.timestamp() * 1000)
+    
+    print(f"Загрузка полной истории за 2 года...")
+    print(
+        f"Период: {datetime.fromtimestamp(start_ms / 1000, tz=timezone.utc)} - {datetime.fromtimestamp(end_ms / 1000, tz=timezone.utc)}")
+    
+    return get_all_transaction_logs(api_key, api_secret, account_type, category, currency,
+                                    start_time=start_ms, end_time=end_ms)
+
+
+def get_user_id(api_key, api_secret):
+    """Получить userID из информации об API ключе для идентификации кэша"""
+    info = query_api_key_info(api_key, api_secret)
+    return str(info.get('userID', 'unknown'))
