@@ -4,7 +4,6 @@ import pickle
 import re
 from datetime import datetime, timezone, timedelta
 import httpx
-import config
 
 
 # Папка для кеша
@@ -13,7 +12,7 @@ os.makedirs(CACHE_DIR, exist_ok=True)
 
 
 async def send_telegram_message(chat_id: int, chat: int, text: str):
-    TOKEN = config.TELEGRAM_BOT_TOKEN 
+    TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"  # Replace with your actual token or load from a secure place
     async with httpx.AsyncClient() as client:
         await client.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", data={"chat_id": chat, "text": text, "parse_mode": "HTML"})
 
