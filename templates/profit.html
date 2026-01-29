@@ -8,7 +8,7 @@
 <body>
     <div class="window form-window">
         <div class="title-bar">
-            <div class="title-bar-text">📊 Profit Analysis Tool</div>
+            <div class="title-bar-text">Profit Analysis Tool</div>
         </div>
         <div class="window-body">
             <form method="POST" action="/profit/process" id="profitForm">
@@ -34,12 +34,6 @@
                             <option value="BTC" {% if currency == 'BTC' %}selected{% endif %}>BTC</option>
                             <option value="ETH" {% if currency == 'ETH' %}selected{% endif %}>ETH</option>
                         </select>
-                    </div>
-                    <div class="form-group">
-                        <label>
-                            <input type="checkbox" name="show_balance" value="1" {% if show_balance %}checked{% endif %}>
-                            Show Balance Chart (with adjusted balance)
-                        </label>
                     </div>
                 </fieldset>
                 
@@ -72,8 +66,8 @@
                 </fieldset>
                 
                 <div class="buttons">
-                    <button type="submit" name="action" value="analyze">📈 Analyze Profitability</button>
-                    <button type="submit" name="action" value="sync_only">🔄 Sync Data Only</button>
+                    <button type="submit" name="action" value="analyze">Analyze Profitability</button>
+                    <button type="submit" name="action" value="sync_only">Sync Data Only</button>
                 </div>
                 
                 <div class="status-bar">
@@ -82,17 +76,17 @@
             </form>
             
             <div style="margin-top: 15px; padding: 10px; background: #ffffcc; border: 1px solid #cccc00;">
-                <b>ℹ️ Info:</b><br>
-                • First run downloads up to 2 years of transaction history<br>
-                • Subsequent runs only fetch new data (incremental sync)<br>
-                • Profitability % excludes deposits/withdrawals impact<br>
-                • Data is stored in <code>cache/</code> folder
+                <b>Info:</b><br>
+                - First run downloads up to 2 years of transaction history<br>
+                - Subsequent runs only fetch new data (incremental sync)<br>
+                - Profitability % excludes deposits/withdrawals impact<br>
+                - Data is stored in <code>cache/</code> folder
             </div>
         </div>
     </div>
     
     <div style="text-align: center; margin-top: 10px;">
-        <a href="/" style="color: white; text-decoration: none;">← Back to PnL Tools</a>
+        <a href="/" style="color: white; text-decoration: none;">Back to PnL Tools</a>
     </div>
 </body>
 </html>

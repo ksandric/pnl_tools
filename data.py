@@ -737,16 +737,16 @@ def get_account_summary(api_key, api_secret, category="linear", account_type="UN
     Returns:
         dict: Агрегированная информация о балансе и позициях
     """
-    print("\n" + "=" * 70)
-    print("Сбор информации о балансе и позициях...")
-    print("=" * 70)
+    # print("\n" + "=" * 70)
+    # print("Сбор информации о балансе и позициях...")
+    # print("=" * 70)
     
     # Получение баланса
-    print("\n1. Получение баланса кошелька...")
+    # print("\n1. Получение баланса кошелька...")
     wallet_data = exchange.get_wallet_balance(api_key, api_secret, account_type)
     
     # Получение позиций
-    print("\n2. Получение списка позиций...")
+    # print("\n2. Получение списка позиций...")
     positions_data = exchange.get_all_positions(api_key, api_secret, category)
     
     # Обработка данных баланса
@@ -826,43 +826,43 @@ def get_account_summary(api_key, api_secret, category="linear", account_type="UN
     }
     
     # Красивый вывод сводки
-    print("\n" + "=" * 70)
-    print("СВОДКА ПО АККАУНТУ")
-    print("=" * 70)
+    # print("\n" + "=" * 70)
+    # print("СВОДКА ПО АККАУНТУ")
+    # print("=" * 70)
     
-    print("\n--- БАЛАНС ---")
-    print(f"Total Wallet Balance:  {balance_info['totalWalletBalance']}")
-    print(f"Total Margin Balance:  {balance_info['totalMarginBalance']}")
-    print(f"Total Perp UPL:        {balance_info['totalPerpUPL']}")
-    print(f"Total Equity:          {balance_info['totalEquity']}")
+    # print("\n--- БАЛАНС ---")
+    # print(f"Total Wallet Balance:  {balance_info['totalWalletBalance']}")
+    # print(f"Total Margin Balance:  {balance_info['totalMarginBalance']}")
+    # print(f"Total Perp UPL:        {balance_info['totalPerpUPL']}")
+    # print(f"Total Equity:          {balance_info['totalEquity']}")
     
-    if balance_info["coins"]:
-        print(f"\nМонеты ({len(balance_info['coins'])}):")
-        for coin in balance_info["coins"]:
-            equity = float(coin["equity"])
-            if equity > 0:  # Показываем только монеты с балансом
-                print(f"  {coin['coin']:8} - Equity: {coin['equity']}")
+    # if balance_info["coins"]:
+        # print(f"\nМонеты ({len(balance_info['coins'])}):")
+        # for coin in balance_info["coins"]:
+            # equity = float(coin["equity"])
+            # if equity > 0:  # Показываем только монеты с балансом
+                # print(f"  {coin['coin']:8} - Equity: {coin['equity']}")
     
-    print("\n--- ПОЗИЦИИ ---")
-    print(f"Открытых позиций: {len(open_positions)}")
+    # print("\n--- ПОЗИЦИИ ---")
+    # print(f"Открытых позиций: {len(open_positions)}")
     
-    if open_positions:
-        print("\nОткрытые позиции:")
-        for pos in open_positions:
-            pnl_sign = "+" if float(pos["unrealisedPnl"]) >= 0 else ""
-            print(f"  {pos['symbol']:12} {pos['side']:4} | Size: {pos['size']:12} | "
-                  f"Value: {pos['positionValue']:12} | Entry: {pos['avgPrice']:12} | "
-                  f"PnL: {pnl_sign}{pos['unrealisedPnl']}")
+    # if open_positions:
+        # print("\nОткрытые позиции:")
+        # for pos in open_positions:
+            # pnl_sign = "+" if float(pos["unrealisedPnl"]) >= 0 else ""
+            # print(f"  {pos['symbol']:12} {pos['side']:4} | Size: {pos['size']:12} | "
+            #       f"Value: {pos['positionValue']:12} | Entry: {pos['avgPrice']:12} | "
+            #       f"PnL: {pnl_sign}{pos['unrealisedPnl']}")
     
-    print(f"\nPosition Value (Long):   {position_value_long:.4f}")
-    print(f"Position Value (Short):  {position_value_short:.4f}")
-    print(f"Total Position Value:    {position_value_long + position_value_short:.4f}")
+    # print(f"\nPosition Value (Long):   {position_value_long:.4f}")
+    # print(f"Position Value (Short):  {position_value_short:.4f}")
+    # print(f"Total Position Value:    {position_value_long + position_value_short:.4f}")
     
-    print(f"\nUnrealised PnL (Long):   {unrealised_pnl_long:+.4f}")
-    print(f"Unrealised PnL (Short):  {unrealised_pnl_short:+.4f}")
-    print(f"Total Unrealised PnL:    {unrealised_pnl_long + unrealised_pnl_short:+.4f}")
+    # print(f"\nUnrealised PnL (Long):   {unrealised_pnl_long:+.4f}")
+    # print(f"Unrealised PnL (Short):  {unrealised_pnl_short:+.4f}")
+    # print(f"Total Unrealised PnL:    {unrealised_pnl_long + unrealised_pnl_short:+.4f}")
     
-    print("\n" + "=" * 70)
+    # print("\n" + "=" * 70)
     
     return result
 
@@ -913,7 +913,7 @@ def format_account_summary_html(summary_data):
     sign = "+" if total_perp_upl >= 0 else ""
     html.append(f'<p style="margin: 2px 0; font-size: 10px;"><strong>Total Perp UPL:</strong> <span style="color: {color}; font-weight: bold;">{sign}{balance.get("totalPerpUPL", "0")}</span></p>')
     
-    html.append(f'<p style="margin: 2px 0; font-size: 10px;"><strong>Total Equity:</strong> {balance.get("totalEquity", "0")}</p>')
+    html.append(f'<p style="margin: 2px 0; font-size: 10px;"><strong>Total positions cost:</strong> {positions.get("total_position_value", "0")} ({(positions.get("total_position_value", 0)/float(balance.get("totalWalletBalance", 1)))*100:.2f}%)</p>')
     
     html.append('</div>')
     
@@ -964,9 +964,11 @@ def format_account_summary_html(summary_data):
         html.append('<th>Symbol</th>')
         html.append('<th>Side</th>')
         html.append('<th>Size</th>')
-        html.append('<th>Position Value</th>')
+        html.append('<th>Cost, USD</th>')
+        html.append('<th>Rate Cost, %</th>')
         html.append('<th>Entry Price</th>')
-        html.append('<th>Unrealised PnL</th>')
+        html.append('<th>un. PnL, USD</th>')
+        html.append('<th>un. PnL, %</th>')
         html.append('</tr></thead>')
         html.append('<tbody>')
         
@@ -982,8 +984,10 @@ def format_account_summary_html(summary_data):
             html.append(f'<td style="color: {side_color}; font-weight: bold;">{side}</td>')
             html.append(f'<td style="text-align: right;">{pos.get("size", "0")}</td>')
             html.append(f'<td style="text-align: right;">{pos.get("positionValue", "0")}</td>')
+            html.append(f'<td style="text-align: right;">{(pos.get("positionValue", "0")/float(balance["totalWalletBalance"]))*100:.2f}</td>')
             html.append(f'<td style="text-align: right;">{pos.get("avgPrice", "0")}</td>')
             html.append(f'<td style="text-align: right; font-weight: bold; color: {pnl_color};">{pnl_sign}{pos.get("unrealisedPnl", "0")}</td>')
+            html.append(f'<td style="text-align: right; font-weight: bold; color: {pnl_color};">{pnl_sign}{(pnl/float(balance["totalWalletBalance"]))*100:.2f}</td>')
             html.append('</tr>')
         
         html.append('</tbody></table>')

@@ -323,7 +323,6 @@ async def profit_process_loading(
     currency: str = Form("USDT"),
     start_datetime: str = Form(None),
     end_datetime: str = Form(None),
-    show_balance: str = Form(None),
     force_sync: str = Form(None),
     full_reload: str = Form(None),
     action: str = Form("analyze")
@@ -336,7 +335,6 @@ async def profit_process_loading(
         "currency": currency,
         "start_datetime": start_datetime or "",
         "end_datetime": end_datetime or "",
-        "show_balance": show_balance or "",
         "force_sync": force_sync or "",
         "full_reload": full_reload or "",
         "action": action
@@ -351,7 +349,6 @@ async def profit_process(
     currency: str = Form("USDT"),
     start_datetime: str = Form(None),
     end_datetime: str = Form(None),
-    show_balance: str = Form(None),
     force_sync: str = Form(None),
     full_reload: str = Form(None),
     action: str = Form("analyze")
@@ -359,7 +356,6 @@ async def profit_process(
     """Process profit analysis request"""
     try:
         # Parse boolean options
-        show_balance_bool = show_balance == "1"
         force_sync_bool = force_sync == "1"
         full_reload_bool = full_reload == "1"
         
@@ -377,20 +373,40 @@ async def profit_process(
             user_id = exchange.get_user_id(api_key, api_secret)
             metadata = data_profit.get_metadata(user_id)
             
+            # Create a minimal result for sync-only mode
+            sync_result = {
+                "currency": currency,
+                "period": {"start": None, "end": None},
+                "initial_balance": 0,
+                "current_balance": 0,
+                "unrealized_pnl": 0,
+                "effective_balance": 0,
+                "trading_pnl": 0,
+                "trading_fees": 0,
+                "funding_fees": 0,
+                "net_trading_profit": 0,
+                "total_trades": 0,
+                "deposits": 0,
+                "deposits_count": 0,
+                "withdrawals": 0,
+                "withdrawals_count": 0,
+                "total_profit_percent": 0,
+                "current_profit_percent_with_unrealized": 0
+            }
+            
             return templates.TemplateResponse("profit_results.html", {
                 "request": request,
-                "summary_html": "<div style='padding: 20px; text-align: center;'><h2>✅ Data Sync Complete</h2><p>Data has been synchronized successfully.</p></div>",
+                "result": sync_result,
                 "profitability_chart_html": "<p style='text-align: center; padding: 40px;'>No chart - sync only mode</p>",
                 "balance_chart_html": None,
-                "by_type_html": "<p>Run analysis to see breakdown</p>",
-                "by_symbol_html": "<p>Run analysis to see breakdown</p>",
-                "cache_info_html": format_cache_info_html(metadata),
+                "by_type": {},
+                "by_symbol": {},
+                "cache_info": metadata,
                 "api_key": api_key,
                 "api_secret": api_secret,
                 "currency": currency,
                 "start_datetime": start_datetime,
                 "end_datetime": end_datetime,
-                "show_balance": show_balance_bool,
                 "analysis_time": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
             })
         
@@ -404,46 +420,45 @@ async def profit_process(
             full_reload=full_reload_bool
         )
         
-        # Generate summary HTML
-        summary_html = data_profit.get_performance_summary_html(result)
-        
         # Generate profitability chart
         profitability_chart = chart.create_profitability_chart(
-            result['profitability_chart'],
-            show_balance=show_balance_bool
+            result['profitability_chart']
         )
         profitability_chart_html = profitability_chart.to_html(full_html=False, include_plotlyjs='cdn') if profitability_chart else "<p>Could not generate chart</p>"
         
-        # Generate balance chart if requested
-        balance_chart_html = None
-        if show_balance_bool:
-            balance_chart = chart.create_balance_chart(result['profitability_chart'])
-            if balance_chart:
-                balance_chart_html = balance_chart.to_html(full_html=False, include_plotlyjs='cdn')
+        # Generate balance chart (always)
+        balance_chart = chart.create_balance_chart(result['profitability_chart'])
+        balance_chart_html = balance_chart.to_html(full_html=False, include_plotlyjs='cdn') if balance_chart else None
         
-        # Generate breakdown tables
-        by_type_html = format_by_type_html(result.get('by_type', {}))
-        by_symbol_html = format_by_symbol_html(result.get('by_symbol', {}))
+        # Load account summary (balance and positions)
+        account_summary_html = ""
+        try:
+            account_summary_data = data.get_account_summary(api_key, api_secret, category="linear", account_type="UNIFIED")
+            account_summary_data["api_key"] = api_key
+            account_summary_data["api_secret"] = api_secret
+            account_summary_html = data.format_account_summary_html(account_summary_data)
+        except Exception as ex:
+            print(f"Error loading account summary: {ex}")
+            account_summary_html = f"<p>Error loading account information: {ex}</p>"
         
         # Cache info
         user_id = exchange.get_user_id(api_key, api_secret)
         metadata = data_profit.get_metadata(user_id)
-        cache_info_html = format_cache_info_html(metadata)
         
         return templates.TemplateResponse("profit_results.html", {
             "request": request,
-            "summary_html": summary_html,
+            "result": result,
             "profitability_chart_html": profitability_chart_html,
             "balance_chart_html": balance_chart_html,
-            "by_type_html": by_type_html,
-            "by_symbol_html": by_symbol_html,
-            "cache_info_html": cache_info_html,
+            "account_summary_html": account_summary_html,
+            "by_type": result.get('by_type', {}),
+            "by_symbol": result.get('by_symbol', {}),
+            "cache_info": metadata,
             "api_key": api_key,
             "api_secret": api_secret,
             "currency": currency,
             "start_datetime": start_datetime,
             "end_datetime": end_datetime,
-            "show_balance": show_balance_bool,
             "analysis_time": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
         })
         
@@ -455,140 +470,16 @@ async def profit_process(
         <head><title>Error</title><link rel="stylesheet" href="/static/style.css"></head>
         <body>
             <div class="window">
-                <div class="title-bar"><div class="title-bar-text">⚠️ Error</div></div>
+                <div class="title-bar"><div class="title-bar-text">Error</div></div>
                 <div class="window-body">
                     <h2>Error during analysis</h2>
                     <pre style="background: #fff; padding: 10px; border: 1px solid #808080; overflow: auto;">{str(e)}</pre>
-                    <p><a href="/profit">← Back to Profit Analysis</a></p>
+                    <p><a href="/profit">Back to Profit Analysis</a></p>
                 </div>
             </div>
         </body>
         </html>
         """)
-
-
-def format_by_type_html(by_type: dict) -> str:
-    """Format transaction type breakdown as HTML table"""
-    if not by_type:
-        return "<p>No data available</p>"
-    
-    html = '''
-    <table style="width: 100%; border-collapse: collapse; border: 2px solid; border-color: #808080 #ffffff #ffffff #808080; background-color: #ffffff; font-size: 11px;">
-        <thead>
-            <tr style="background-color: #000080; color: white;">
-                <th style="padding: 5px; border: 1px solid #808080; text-align: left;">Transaction Type</th>
-                <th style="padding: 5px; border: 1px solid #808080; text-align: right;">Amount</th>
-            </tr>
-        </thead>
-        <tbody>
-    '''
-    
-    for trans_type, amount in sorted(by_type.items(), key=lambda x: abs(x[1]), reverse=True):
-        color = "green" if amount > 0 else "red" if amount < 0 else "black"
-        html += f'''
-            <tr>
-                <td style="padding: 5px; border: 1px solid #808080;">{trans_type}</td>
-                <td style="padding: 5px; border: 1px solid #808080; text-align: right; color: {color}; font-weight: bold;">{amount:+.4f}</td>
-            </tr>
-        '''
-    
-    html += '</tbody></table>'
-    return html
-
-
-def format_by_symbol_html(by_symbol: dict) -> str:
-    """Format symbol breakdown as HTML table"""
-    if not by_symbol:
-        return "<p>No data available</p>"
-    
-    html = '''
-    <table style="width: 100%; border-collapse: collapse; border: 2px solid; border-color: #808080 #ffffff #ffffff #808080; background-color: #ffffff; font-size: 11px;">
-        <thead>
-            <tr style="background-color: #000080; color: white;">
-                <th style="padding: 5px; border: 1px solid #808080; text-align: left;">Symbol</th>
-                <th style="padding: 5px; border: 1px solid #808080; text-align: right;">PnL</th>
-                <th style="padding: 5px; border: 1px solid #808080; text-align: right;">Fees</th>
-                <th style="padding: 5px; border: 1px solid #808080; text-align: right;">Trades</th>
-            </tr>
-        </thead>
-        <tbody>
-    '''
-    
-    # Sort by PnL descending
-    sorted_symbols = sorted(by_symbol.items(), key=lambda x: x[1].get('pnl', 0), reverse=True)
-    
-    for symbol, data in sorted_symbols:
-        pnl = data.get('pnl', 0)
-        fees = data.get('fees', 0)
-        trades = data.get('trades', 0)
-        pnl_color = "green" if pnl > 0 else "red" if pnl < 0 else "black"
-        
-        html += f'''
-            <tr>
-                <td style="padding: 5px; border: 1px solid #808080;">{symbol}</td>
-                <td style="padding: 5px; border: 1px solid #808080; text-align: right; color: {pnl_color}; font-weight: bold;">{pnl:+.4f}</td>
-                <td style="padding: 5px; border: 1px solid #808080; text-align: right; color: red;">{fees:.4f}</td>
-                <td style="padding: 5px; border: 1px solid #808080; text-align: right;">{trades}</td>
-            </tr>
-        '''
-    
-    html += '</tbody></table>'
-    return html
-
-
-def format_cache_info_html(metadata: dict) -> str:
-    """Format cache metadata as HTML"""
-    if not metadata:
-        return "<p>No cache information available</p>"
-    
-    html = '''
-    <table style="width: 100%; border-collapse: collapse; border: 2px solid; border-color: #808080 #ffffff #ffffff #808080; background-color: #ffffff; font-size: 11px;">
-        <thead>
-            <tr style="background-color: #000080; color: white;">
-                <th style="padding: 5px; border: 1px solid #808080; text-align: left;">Property</th>
-                <th style="padding: 5px; border: 1px solid #808080; text-align: left;">Value</th>
-            </tr>
-        </thead>
-        <tbody>
-    '''
-    
-    html += f'''
-        <tr>
-            <td style="padding: 5px; border: 1px solid #808080;">User ID</td>
-            <td style="padding: 5px; border: 1px solid #808080;">{metadata.get('user_id', 'N/A')}</td>
-        </tr>
-        <tr>
-            <td style="padding: 5px; border: 1px solid #808080;">Currency</td>
-            <td style="padding: 5px; border: 1px solid #808080;">{metadata.get('currency', 'N/A')}</td>
-        </tr>
-    '''
-    
-    # Last sync times
-    last_sync = metadata.get('last_sync', {})
-    for data_type, sync_time in last_sync.items():
-        html += f'''
-            <tr>
-                <td style="padding: 5px; border: 1px solid #808080;">Last Sync: {data_type}</td>
-                <td style="padding: 5px; border: 1px solid #808080;">{sync_time[:19] if sync_time else 'Never'}</td>
-            </tr>
-        '''
-    
-    # Data ranges
-    data_range = metadata.get('data_range', {})
-    for data_type, range_info in data_range.items():
-        if isinstance(range_info, dict):
-            oldest = range_info.get('oldest', 'N/A')[:10] if range_info.get('oldest') else 'N/A'
-            newest = range_info.get('newest', 'N/A')[:10] if range_info.get('newest') else 'N/A'
-            count = range_info.get('count', 0)
-            html += f'''
-                <tr style="background-color: #e0e0e0;">
-                    <td style="padding: 5px; border: 1px solid #808080;">{data_type} range</td>
-                    <td style="padding: 5px; border: 1px solid #808080;">{oldest} → {newest} ({count} records)</td>
-                </tr>
-            '''
-    
-    html += '</tbody></table>'
-    return html
 
 
 if __name__ == "__main__":
