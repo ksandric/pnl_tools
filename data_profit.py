@@ -530,10 +530,11 @@ def calculate_profitability_chart(transaction_logs, initial_balance=None):
     """Рассчитать данные для графика доходности в %
     
     Алгоритм исключает влияние депозитов и выводов на доходность.
+    Доходность рассчитывается как: (trading_profit / capital_base) * 100%
     
     Args:
         transaction_logs: Список логов транзакций (отсортированных по времени)
-        initial_balance: Начальный баланс (если None - берём из первой записи)
+        initial_balance: Начальный баланс (если None - определяется автоматически)
     
     Returns:
         dict: Данные для графика
@@ -543,31 +544,62 @@ def calculate_profitability_chart(transaction_logs, initial_balance=None):
             "timestamps": [],
             "balance": [],
             "adjusted_balance": [],
-            "profitability_percent": []
+            "profitability_percent": [],
+            "initial_balance": 0,
+            "final_balance": 0,
+            "final_adjusted_balance": 0,
+            "total_profit_percent": 0
         }
     
     # Сортируем по времени
     sorted_logs = sorted(transaction_logs, key=lambda x: int(x.get("transactionTime", 0)))
-    
-    # Начальный баланс
-    first_log = sorted_logs[0]
-    first_balance = float(first_log.get("cashBalance", 0) or 0)
-    first_change = float(first_log.get("change", 0) or 0)
-    
-    if initial_balance is None:
-        # Вычисляем баланс ДО первой транзакции
-        initial_balance = first_balance - first_change
-    
-    if initial_balance <= 0:
-        initial_balance = first_balance if first_balance > 0 else 1.0
     
     timestamps = []
     balance_values = []
     adjusted_balance_values = []
     profitability_percent = []
     
-    # Корректировка для исключения влияния депозитов/выводов
-    transfer_adjustment = 0.0
+    # Суммарные депозиты и выводы для расчёта "капитальной базы"
+    total_deposits = 0.0
+    total_withdrawals = 0.0
+    
+    # Первый проход - считаем начальные депозиты и определяем капитальную базу
+    # Капитальная база = сумма всех депозитов минус сумма всех выводов
+    first_trading_balance = None
+    
+    for log in sorted_logs:
+        log_type = log.get("type", "")
+        change = float(log.get("change", 0) or 0)
+        balance = float(log.get("cashBalance", 0) or 0)
+        
+        if log_type == "TRANSFER_IN":
+            total_deposits += abs(change)
+        elif log_type == "TRANSFER_OUT":
+            total_withdrawals += abs(change)
+        
+        # Запоминаем первый баланс после торговых операций (не переводов)
+        if first_trading_balance is None and log_type not in ("TRANSFER_IN", "TRANSFER_OUT"):
+            # Баланс ДО этой торговой операции
+            first_trading_balance = balance - change
+    
+    # Определяем начальный капитал для расчёта доходности
+    if initial_balance is None:
+        # Капитальная база = чистые вложения (депозиты - выводы)
+        capital_base = total_deposits - total_withdrawals
+        if capital_base <= 0:
+            # Если нет депозитов или выводы больше депозитов,
+            # берём первый известный баланс
+            first_log = sorted_logs[0]
+            first_balance = float(first_log.get("cashBalance", 0) or 0)
+            first_change = float(first_log.get("change", 0) or 0)
+            capital_base = first_balance - first_change
+            if capital_base <= 0:
+                capital_base = first_balance if first_balance > 0 else 1.0
+        initial_balance = capital_base
+    
+    # Накопленные переводы для корректировки текущего баланса
+    cumulative_deposits = 0.0
+    cumulative_withdrawals = 0.0
     
     for log in sorted_logs:
         ts = int(log.get("transactionTime", 0))
@@ -575,18 +607,28 @@ def calculate_profitability_chart(transaction_logs, initial_balance=None):
         change = float(log.get("change", 0) or 0)
         log_type = log.get("type", "")
         
-        # Если это перевод - корректируем
+        # Накапливаем переводы
         if log_type == "TRANSFER_IN":
-            transfer_adjustment += abs(change)
+            cumulative_deposits += abs(change)
         elif log_type == "TRANSFER_OUT":
-            transfer_adjustment -= abs(change)
+            cumulative_withdrawals += abs(change)
         
-        # Скорректированный баланс (без влияния переводов)
-        adjusted_balance = balance - transfer_adjustment
+        # Скорректированный баланс = текущий баланс - депозиты + выводы
+        # Это показывает сколько бы было на счёте если бы не было переводов
+        adjusted_balance = balance - cumulative_deposits + cumulative_withdrawals
         
-        # Доходность в %
+        # Прибыль/убыток от торговли = adjusted_balance (он может быть отрицательным)
+        # Доходность = прибыль / начальный капитал * 100
+        # Но лучше считать относительно капитальной базы
+        
+        # Альтернативный расчёт:
+        # trading_pnl = текущий баланс - (депозиты - выводы) = balance - capital_base
+        # profitability = trading_pnl / capital_base * 100
+        
+        trading_pnl = balance - (cumulative_deposits - cumulative_withdrawals)
+        
         if initial_balance > 0:
-            profit_pct = ((adjusted_balance / initial_balance) - 1) * 100
+            profit_pct = (trading_pnl / initial_balance) * 100
         else:
             profit_pct = 0.0
         
@@ -603,6 +645,9 @@ def calculate_profitability_chart(transaction_logs, initial_balance=None):
         "adjusted_balance": adjusted_balance_values,
         "profitability_percent": profitability_percent,
         "initial_balance": initial_balance,
+        "capital_base": initial_balance,
+        "total_deposits": total_deposits,
+        "total_withdrawals": total_withdrawals,
         "final_balance": balance_values[-1] if balance_values else 0,
         "final_adjusted_balance": adjusted_balance_values[-1] if adjusted_balance_values else 0,
         "total_profit_percent": profitability_percent[-1] if profitability_percent else 0
