@@ -500,23 +500,44 @@ async def profit_process(
         
         # Generate PnL by symbol chart (optional)
         symbol_chart_html = None
+        print(f"DEBUG: show_symbol_chart_bool = {show_symbol_chart_bool}")
+        print(f"DEBUG: pnl_by_symbol_chart exists = {bool(result.get('pnl_by_symbol_chart'))}")
+        if result.get('pnl_by_symbol_chart'):
+            pnl_data = result['pnl_by_symbol_chart']
+            print(f"DEBUG: pnl_by_symbol_chart type = {type(pnl_data)}")
+            print(f"DEBUG: pnl_by_symbol_chart keys = {pnl_data.keys() if isinstance(pnl_data, dict) else 'not a dict'}")
+            if isinstance(pnl_data, dict) and 'data' in pnl_data:
+                print(f"DEBUG: number of symbols = {len(pnl_data['data'])}")
+        
         if show_symbol_chart_bool and result.get('pnl_by_symbol_chart'):
-            symbol_chart = chart.create_pnl_by_symbol_chart(result['pnl_by_symbol_chart'])
-            
-            symbol_chart_config = {
-                'displayModeBar': True,
-                'displaylogo': False,
-                'modeBarButtonsToAdd': ['toImage'],
-                'toImageButtonOptions': {
-                    'format': 'png',
-                    'filename': 'pnl_by_symbol_chart',
-                    'height': 1080,
-                    'width': 1920,
-                    'scale': 2
+            pnl_by_symbol_data = result['pnl_by_symbol_chart']
+            # Check if there's actual data
+            if isinstance(pnl_by_symbol_data, dict) and pnl_by_symbol_data.get('data'):
+                print(f"DEBUG: Creating symbol chart with {len(pnl_by_symbol_data['data'])} symbols")
+                symbol_chart = chart.create_pnl_by_symbol_chart(pnl_by_symbol_data)
+                
+                symbol_chart_config = {
+                    'displayModeBar': True,
+                    'displaylogo': False,
+                    'modeBarButtonsToAdd': ['toImage'],
+                    'toImageButtonOptions': {
+                        'format': 'png',
+                        'filename': 'pnl_by_symbol_chart',
+                        'height': 1080,
+                        'width': 1920,
+                        'scale': 2
+                    }
                 }
-            }
-            
-            symbol_chart_html = symbol_chart.to_html(full_html=False, include_plotlyjs='cdn', config=symbol_chart_config) if symbol_chart else None
+                
+                symbol_chart_html = symbol_chart.to_html(full_html=False, include_plotlyjs='cdn', config=symbol_chart_config) if symbol_chart else None
+                print(f"DEBUG: symbol_chart_html created = {bool(symbol_chart_html)}")
+            else:
+                print("DEBUG: No symbol data available - pnl_by_symbol_chart is empty or has no 'data' key")
+        else:
+            if not show_symbol_chart_bool:
+                print("DEBUG: Symbol chart disabled - checkbox not checked")
+            if not result.get('pnl_by_symbol_chart'):
+                print("DEBUG: Symbol chart disabled - no data in result")
         
         # Load account summary (balance and positions)
         account_summary_html = ""
