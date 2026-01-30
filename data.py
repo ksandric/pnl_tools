@@ -911,7 +911,7 @@ def format_account_summary_html(summary_data):
     total_perp_upl = float(balance.get("totalPerpUPL", "0"))
     color = "green" if total_perp_upl >= 0 else "red"
     sign = "+" if total_perp_upl >= 0 else ""
-    html.append(f'<p style="margin: 2px 0; font-size: 10px;"><strong>Total Perp UPL:</strong> <span style="color: {color}; font-weight: bold;">{sign}{balance.get("totalPerpUPL", "0")}</span></p>')
+    html.append(f'<p style="margin: 2px 0; font-size: 10px;"><strong>Total Perp UPL:</strong> <span style="color: {color}; font-weight: bold;">{sign}{balance.get("totalPerpUPL", "0")}</span> ({(total_perp_upl / total_wallet_balance * 100) if total_wallet_balance > 0 else 0:.2f}%)</p>')
     
     total_position_value = float(positions.get("total_position_value", 0))
     total_wallet_balance = float(balance.get("totalWalletBalance", 1))
