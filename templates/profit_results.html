@@ -80,7 +80,7 @@
                     Trading Results ({{ result.currency }})
                 </h3>
                 
-                <table class="summary-table">
+                <table>
                     <tr>
                         <td>Period:</td>
                         <td class="value">
@@ -141,17 +141,14 @@
                     <tr class="total-row">
                         <td><b>PROFITABILITY (realized):</b></td>
                         <td>
-                            <span style="color: {% if result.total_profit_percent >= 0 %}lime{% else %}#ff6666{% endif %};">
-                                {{ "%+.2f"|format(result.total_profit_percent) }}%
-                            </span>
+                            <td class="value">{{ "%+.2f"|format(result.total_profit_percent) }}%</td>                                
                         </td>
                     </tr>
                     <tr>
                         <td><b>PROFITABILITY (with unrealized PnL):</b></td>
                         <td>
-                            <span style="color: {% if result.current_profit_percent_with_unrealized >= 0 %}lime{% else %}#ff6666{% endif %};">
-                                {{ "%+.2f"|format(result.current_profit_percent_with_unrealized) }}%
-                            </span>
+                            <td class="value">
+                                {{ "%+.2f"|format(result.current_profit_percent_with_unrealized) }}%</td>
                         </td>
                     </tr>
                 </table>

@@ -962,7 +962,7 @@ def format_account_summary_html(summary_data):
     
     if open_positions:
         html.append('<h3 style="font-family: \'MS Sans Serif\', sans-serif; margin: 15px 0 5px 0;">Открытые позиции</h3>')
-        html.append('<table class="summary-table" style="width: 100%; margin-bottom: 20px;">')
+        html.append('<table style="width: 100%; margin-bottom: 20px;">')
         html.append('<thead><tr>')
         html.append('<th>Symbol</th>')
         html.append('<th>Side</th>')
