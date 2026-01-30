@@ -401,7 +401,7 @@ async def profit_process(
         
         if action == "sync_only":
             # Just sync data without analysis
-            data_profit.sync_all_data(api_key, api_secret, currency, full_reload_bool)
+            data_profit.sync_all_data(api_key, api_secret, full_reload_bool)
             
             user_id = exchange.get_user_id(api_key, api_secret)
             metadata = data_profit.get_metadata(user_id)

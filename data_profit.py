@@ -183,13 +183,12 @@ def get_oldest_timestamp(data, time_field="transactionTime"):
 # Функции синхронизации данных
 # ============================================================================
 
-def sync_transaction_logs(api_key, api_secret, currency="USDT", full_reload=False):
+def sync_transaction_logs(api_key, api_secret, full_reload=False):
     """Синхронизировать логи транзакций
     
     Args:
         api_key: API ключ
         api_secret: API секрет
-        currency: Валюта для фильтрации (USDT, USDC и т.д.)
         full_reload: Если True - полная перезагрузка за 2 года
     
     Returns:
@@ -212,7 +211,6 @@ def sync_transaction_logs(api_key, api_secret, currency="USDT", full_reload=Fals
         new_data = exchange.get_all_transaction_logs(
             api_key, api_secret,
             account_type="UNIFIED",
-            currency=currency,
             start_time=start_ms,
             end_time=now_ms
         )
@@ -234,7 +232,6 @@ def sync_transaction_logs(api_key, api_secret, currency="USDT", full_reload=Fals
         new_data = exchange.get_all_transaction_logs(
             api_key, api_secret,
             account_type="UNIFIED",
-            currency=currency,
             start_time=start_ms,
             end_time=now_ms
         )
@@ -264,7 +261,6 @@ def sync_transaction_logs(api_key, api_secret, currency="USDT", full_reload=Fals
         }
     
     metadata["user_id"] = user_id
-    metadata["currency"] = currency
     save_metadata(user_id, metadata)
     
     print(f"Всего записей после синхронизации: {len(merged_data)}")
@@ -397,13 +393,12 @@ def sync_withdrawals(api_key, api_secret, coin=None, full_reload=False):
     return merged_data
 
 
-def sync_all_data(api_key, api_secret, currency="USDT", full_reload=False):
+def sync_all_data(api_key, api_secret, full_reload=False):
     """Синхронизировать все данные
     
     Args:
         api_key: API ключ
         api_secret: API секрет
-        currency: Валюта для transaction logs
         full_reload: Если True - полная перезагрузка всех данных
     
     Returns:
@@ -413,7 +408,7 @@ def sync_all_data(api_key, api_secret, currency="USDT", full_reload=False):
     print("ПОЛНАЯ СИНХРОНИЗАЦИЯ ДАННЫХ")
     print("=" * 60)
     
-    transaction_logs = sync_transaction_logs(api_key, api_secret, currency, full_reload)
+    transaction_logs = sync_transaction_logs(api_key, api_secret, full_reload)
     deposits = sync_deposits(api_key, api_secret, full_reload=full_reload)
     withdrawals = sync_withdrawals(api_key, api_secret, full_reload=full_reload)
     
@@ -533,7 +528,7 @@ def calculate_trading_metrics(transaction_logs, category=None):
     return metrics
 
 
-def calculate_profitability_chart(transaction_logs, initial_balance=None):
+def calculate_profitability_chart(transaction_logs, currency="USDT", initial_balance=None):
     """Рассчитать данные для графика доходности в %
     
     Алгоритм исключает влияние депозитов и выводов на доходность.
@@ -541,6 +536,7 @@ def calculate_profitability_chart(transaction_logs, initial_balance=None):
     
     Args:
         transaction_logs: Список логов транзакций (отсортированных по времени)
+        currency: Валюта для фильтрации баланса (USDT, USDC и т.д.)
         initial_balance: Начальный баланс (если None - определяется автоматически)
     
     Returns:
@@ -558,8 +554,23 @@ def calculate_profitability_chart(transaction_logs, initial_balance=None):
             "total_profit_percent": 0
         }
     
+    # Фильтруем по валюте для корректного расчета баланса
+    currency_logs = [log for log in transaction_logs if log.get("currency") == currency]
+    
+    if not currency_logs:
+        return {
+            "timestamps": [],
+            "balance": [],
+            "adjusted_balance": [],
+            "profitability_percent": [],
+            "initial_balance": 0,
+            "final_balance": 0,
+            "final_adjusted_balance": 0,
+            "total_profit_percent": 0
+        }
+    
     # Сортируем по времени
-    sorted_logs = sorted(transaction_logs, key=lambda x: int(x.get("transactionTime", 0)))
+    sorted_logs = sorted(currency_logs, key=lambda x: int(x.get("transactionTime", 0)))
     
     timestamps = []
     balance_values = []
@@ -665,7 +676,7 @@ def calculate_profitability_chart(transaction_logs, initial_balance=None):
 def analyze_trading_performance(api_key, api_secret, 
                                 start_time=None, end_time=None,
                                 currency="USDT",
-                                category=None,
+                                category="linear",
                                 force_sync=False,
                                 full_reload=False):
     """Анализировать результаты торгов
@@ -691,19 +702,19 @@ def analyze_trading_performance(api_key, api_secret,
     
     # Синхронизация данных если нужно
     if force_sync or full_reload:
-        sync_all_data(api_key, api_secret, currency, full_reload)
+        sync_all_data(api_key, api_secret, full_reload)
     else:
         # Проверяем актуальность кэша
         last_sync = get_last_sync_time(user_id, "transaction_logs")
         if last_sync is None:
             print("Кэш пуст, выполняем синхронизацию...")
-            sync_all_data(api_key, api_secret, currency, full_reload=True)
+            sync_all_data(api_key, api_secret, full_reload=True)
         else:
             # Если прошло больше часа - обновляем
             hours_since_sync = (datetime.now(timezone.utc) - last_sync).total_seconds() / 3600
             if hours_since_sync > 1:
                 print(f"Кэш устарел ({hours_since_sync:.1f} часов), обновляем...")
-                sync_all_data(api_key, api_secret, currency, full_reload=False)
+                sync_all_data(api_key, api_secret, full_reload=False)
     
     # Загружаем данные из кэша
     transaction_logs = load_cached_data(user_id, "transaction_logs")
@@ -744,8 +755,8 @@ def analyze_trading_performance(api_key, api_secret,
     total_deposits = sum(float(d.get("amount", 0) or 0) for d in deposits)
     total_withdrawals = sum(float(w.get("amount", 0) or 0) for w in withdrawals)
     
-    # Данные для графика доходности (используем ВСЕ логи без фильтра для корректного баланса)
-    profitability_data = calculate_profitability_chart(transaction_logs)
+    # Данные для графика доходности (используем все логи, но фильтруем по currency внутри функции)
+    profitability_data = calculate_profitability_chart(transaction_logs, currency=currency)
     
     # Получаем текущий баланс и unrealized PnL
     current_balance = 0.0
