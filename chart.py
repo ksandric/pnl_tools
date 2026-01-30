@@ -411,7 +411,7 @@ def create_profitability_chart(profitability_data, show_balance=False):
             )
         
         fig.update_layout(
-            height=500,
+            height=700,
             xaxis_title="Время (UTC)",
             yaxis_title="Доходность (%)",
             hovermode='x unified',
@@ -540,7 +540,7 @@ def create_balance_chart(profitability_data):
     )
     
     fig.update_layout(
-        height=500,
+        height=700,
         xaxis_title="Время (UTC)",
         yaxis_title="Баланс",
         hovermode='x unified',
