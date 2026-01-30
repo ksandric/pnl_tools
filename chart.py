@@ -561,18 +561,6 @@ def create_balance_chart(profitability_data):
             dict(
                 type="buttons",
                 direction="left",
-                buttons=[
-                    dict(
-                        args=[{"visible": True}],
-                        label="Показать все",
-                        method="restyle"
-                    ),
-                    dict(
-                        args=[{"visible": "legendonly"}],
-                        label="Скрыть все",
-                        method="restyle"
-                    )
-                ],
                 pad={"r": 10, "t": 10},
                 showactive=False,
                 x=0.0,
