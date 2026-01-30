@@ -448,7 +448,7 @@
         <div class="window-body">
             <div style="padding: 20px; text-align: center;">
                 <p style="margin-bottom: 15px;">Modify analysis parameters:</p>
-                <a href="/profit?api_key={{ api_key|urlencode }}&api_secret={{ api_secret|urlencode }}&currency={{ currency|urlencode }}&category={{ category|default('linear')|urlencode }}&start_datetime={{ start_datetime|urlencode }}&end_datetime={{ end_datetime|urlencode }}" 
+                <a href="/profit?api_key={{ api_key|urlencode }}&api_secret={{ api_secret|urlencode }}&currency={{ currency|urlencode }}&category={{ category|default('linear')|urlencode }}&start_datetime={{ start_datetime|urlencode }}&end_datetime={{ end_datetime|urlencode }}&show_symbol_chart={{ show_symbol_chart|default('0') }}" 
                    style="display: inline-block; padding: 8px 16px; background: #c0c0c0; border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff; text-decoration: none; color: black; margin: 5px;">
                     📝 Edit Parameters
                 </a>
@@ -461,6 +461,7 @@
                     <input type="hidden" name="start_datetime" value="{{ start_datetime|default('') }}">
                     <input type="hidden" name="end_datetime" value="{{ end_datetime|default('') }}">
                     <input type="hidden" name="force_sync" value="1">
+                    <input type="hidden" name="show_symbol_chart" value="{{ show_symbol_chart|default('0') }}">
                     <button type="submit" name="action" value="analyze" style="padding: 8px 16px; background: #c0c0c0; border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff; cursor: pointer;">
                         🔄 Sync & Refresh
                     </button>

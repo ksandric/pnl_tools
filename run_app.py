@@ -48,7 +48,8 @@ async def profit_page(
     start_datetime: str = None,
     end_datetime: str = None,
     force_sync: str = None,
-    full_reload: str = None
+    full_reload: str = None,
+    show_symbol_chart: str = None
 ):
     """Profit analysis page with query parameter support"""
     return templates.TemplateResponse("profit.html", {
@@ -60,7 +61,8 @@ async def profit_page(
         "start_datetime": start_datetime or "",
         "end_datetime": end_datetime or "",
         "force_sync": force_sync == "1",
-        "full_reload": full_reload == "1"
+        "full_reload": full_reload == "1",
+        "show_symbol_chart": show_symbol_chart == "1"
     })
 
 
@@ -573,6 +575,7 @@ async def profit_process(
             "withdrawals_list": withdrawals_list,
             "transfer_in_list": transfer_in_list,
             "transfer_out_list": transfer_out_list,
+            "show_symbol_chart": "1" if show_symbol_chart_bool else "0",
             "cache_info": metadata,
             "api_key": api_key,
             "api_secret": api_secret,
