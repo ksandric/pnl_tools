@@ -101,8 +101,34 @@ def create_plotly_chart(plotly_data, chart_type='pnl'):
                 yanchor="top",
                 y=0.99,
                 xanchor="left",
-                x=1.02
-            )
+                x=1.02,
+                itemclick='toggle',
+                itemdoubleclick='toggleothers'
+            ),
+            updatemenus=[
+                dict(
+                    type="buttons",
+                    direction="left",
+                    buttons=[
+                        dict(
+                            args=[{"visible": True}],
+                            label="Показать все",
+                            method="restyle"
+                        ),
+                        dict(
+                            args=[{"visible": "legendonly"}],
+                            label="Скрыть все",
+                            method="restyle"
+                        )
+                    ],
+                    pad={"r": 10, "t": 10},
+                    showactive=False,
+                    x=0.0,
+                    xanchor="left",
+                    y=1.15,
+                    yanchor="top"
+                )
+            ]
         )
 
     else:
@@ -153,8 +179,34 @@ def create_plotly_chart(plotly_data, chart_type='pnl'):
                 yanchor="top",
                 y=0.99,
                 xanchor="left",
-                x=0.01
-            )
+                x=0.01,
+                itemclick='toggle',
+                itemdoubleclick='toggleothers'
+            ),
+            updatemenus=[
+                dict(
+                    type="buttons",
+                    direction="left",
+                    buttons=[
+                        dict(
+                            args=[{"visible": True}],
+                            label="Показать все",
+                            method="restyle"
+                        ),
+                        dict(
+                            args=[{"visible": "legendonly"}],
+                            label="Скрыть все",
+                            method="restyle"
+                        )
+                    ],
+                    pad={"r": 10, "t": 10},
+                    showactive=False,
+                    x=0.0,
+                    xanchor="left",
+                    y=1.12,
+                    yanchor="top"
+                )
+            ]
         )
 
     return fig
@@ -260,8 +312,34 @@ def create_profitability_chart(profitability_data, show_balance=False):
                 yanchor="top",
                 y=0.99,
                 xanchor="left",
-                x=1.02
-            )
+                x=1.02,
+                itemclick='toggle',
+                itemdoubleclick='toggleothers'
+            ),
+            updatemenus=[
+                dict(
+                    type="buttons",
+                    direction="left",
+                    buttons=[
+                        dict(
+                            args=[{"visible": True}],
+                            label="Показать все",
+                            method="restyle"
+                        ),
+                        dict(
+                            args=[{"visible": "legendonly"}],
+                            label="Скрыть все",
+                            method="restyle"
+                        )
+                    ],
+                    pad={"r": 10, "t": 10},
+                    showactive=False,
+                    x=0.0,
+                    xanchor="left",
+                    y=1.12,
+                    yanchor="top"
+                )
+            ]
         )
     else:
         # Только график доходности
@@ -339,14 +417,16 @@ def create_profitability_chart(profitability_data, show_balance=False):
             hovermode='x unified',
             template='simple_white',
             title=dict(
-                text=f"График доходности | Капитальная база: {initial_balance:.2f}",
+                text=f"График доходности: {initial_balance:.2f}",
                 font=dict(size=14)
             ),
             legend=dict(
                 yanchor="top",
                 y=0.99,
                 xanchor="left",
-                x=0.01
+                x=0.01,
+                itemclick='toggle',
+                itemdoubleclick='toggleothers'
             )
         )
 
@@ -414,37 +494,19 @@ def create_balance_chart(profitability_data):
     unrealized_pnl = profitability_data.get('unrealized_pnl', 0)
     
     if current_timestamp and effective_balance:
-        # Точка текущего баланса
-        fig.add_trace(go.Scatter(
-            x=[current_timestamp],
-            y=[current_balance],
-            mode='markers',
-            name=f'Текущий баланс: {current_balance:.2f}',
-            marker=dict(
-                color='#1976D2',
-                size=12,
-                symbol='circle',
-                line=dict(color='white', width=2)
-            ),
-            hovertemplate='<b>💰 Текущий баланс</b><br>' +
-                          'Время: %{x}<br>' +
-                          f'Баланс: {current_balance:.4f}<br>' +
-                          '<extra></extra>'
-        ))
-        
         # Точка эффективного баланса (с unrealized)
         fig.add_trace(go.Scatter(
             x=[current_timestamp],
             y=[effective_balance],
             mode='markers',
-            name=f'С unrealized PnL: {effective_balance:.2f}',
+            name=f'unrealized: {effective_balance:.2f}',
             marker=dict(
                 color='#9C27B0',
                 size=15,
                 symbol='star',
                 line=dict(color='white', width=2)
             ),
-            hovertemplate='<b>⚡ Эффективный баланс (с unrealized)</b><br>' +
+            hovertemplate='<b>unrealized</b><br>' +
                           'Время: %{x}<br>' +
                           f'Баланс: {effective_balance:.4f}<br>' +
                           f'Unrealized PnL: {unrealized_pnl:+.4f}<br>' +
@@ -475,8 +537,6 @@ def create_balance_chart(profitability_data):
         y=initial_balance, 
         line_dash="dot", 
         line_color="green",
-        annotation_text=f"Капитальная база: {initial_balance:.2f}",
-        annotation_position="bottom right"
     )
     
     fig.update_layout(
@@ -489,12 +549,38 @@ def create_balance_chart(profitability_data):
             yanchor="top",
             y=0.99,
             xanchor="left",
-            x=0.01
+            x=0.01,
+            itemclick='toggle',
+            itemdoubleclick='toggleothers'
         ),
         title=dict(
-            text="Динамика баланса | ⚡ = с учётом unrealized PnL",
+            text="Динамика баланса",
             font=dict(size=14)
-        )
+        ),
+        updatemenus=[
+            dict(
+                type="buttons",
+                direction="left",
+                buttons=[
+                    dict(
+                        args=[{"visible": True}],
+                        label="Показать все",
+                        method="restyle"
+                    ),
+                    dict(
+                        args=[{"visible": "legendonly"}],
+                        label="Скрыть все",
+                        method="restyle"
+                    )
+                ],
+                pad={"r": 10, "t": 10},
+                showactive=False,
+                x=0.0,
+                xanchor="left",
+                y=1.12,
+                yanchor="top"
+            )
+        ]
     )
 
     return fig

@@ -283,8 +283,20 @@ async def process_form(
                 transfers_html = f"<p>Ошибка обработки данных transfers: {ex}</p>"
         
         if fig:
-            # Преобразуем график в HTML
-            graph_html = fig.to_html(full_html=False, include_plotlyjs='cdn')
+            # Преобразуем график в HTML с кнопкой полноэкранного просмотра
+            config = {
+                'displayModeBar': True,
+                'displaylogo': False,
+                'modeBarButtonsToAdd': ['toImage'],
+                'toImageButtonOptions': {
+                    'format': 'png',
+                    'filename': 'chart',
+                    'height': 1080,
+                    'width': 1920,
+                    'scale': 2
+                }
+            }
+            graph_html = fig.to_html(full_html=False, include_plotlyjs='cdn', config=config)
             
             # Возвращаем HTML страницу с графиком через шаблон
             return templates.TemplateResponse("results.html", {
@@ -424,11 +436,40 @@ async def profit_process(
         profitability_chart = chart.create_profitability_chart(
             result['profitability_chart']
         )
-        profitability_chart_html = profitability_chart.to_html(full_html=False, include_plotlyjs='cdn') if profitability_chart else "<p>Could not generate chart</p>"
+        
+        # Config для графика с кнопкой полноэкранного просмотра
+        chart_config = {
+            'displayModeBar': True,
+            'displaylogo': False,
+            'modeBarButtonsToAdd': ['toImage'],
+            'toImageButtonOptions': {
+                'format': 'png',
+                'filename': 'profitability_chart',
+                'height': 1080,
+                'width': 1920,
+                'scale': 2
+            }
+        }
+        
+        profitability_chart_html = profitability_chart.to_html(full_html=False, include_plotlyjs='cdn', config=chart_config) if profitability_chart else "<p>Could not generate chart</p>"
         
         # Generate balance chart (always)
         balance_chart = chart.create_balance_chart(result['profitability_chart'])
-        balance_chart_html = balance_chart.to_html(full_html=False, include_plotlyjs='cdn') if balance_chart else None
+        
+        balance_chart_config = {
+            'displayModeBar': True,
+            'displaylogo': False,
+            'modeBarButtonsToAdd': ['toImage'],
+            'toImageButtonOptions': {
+                'format': 'png',
+                'filename': 'balance_chart',
+                'height': 1080,
+                'width': 1920,
+                'scale': 2
+            }
+        }
+        
+        balance_chart_html = balance_chart.to_html(full_html=False, include_plotlyjs='cdn', config=balance_chart_config) if balance_chart else None
         
         # Load account summary (balance and positions)
         account_summary_html = ""

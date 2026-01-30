@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>PNL Tools - Profit Analysis Results</title>
     <link rel="icon" href="/static/computer.ico" type="image/x-icon">
@@ -12,24 +13,30 @@
             font-family: 'MS Sans Serif', Arial, sans-serif;
             font-size: 12px;
         }
+
         .summary-table td {
             padding: 5px;
             border: 1px solid #808080;
         }
+
         .summary-table .value {
             text-align: right;
         }
+
         .summary-table .highlight {
             background: #ffffcc;
         }
+
         .summary-table .total-row {
             background: #000080;
             color: white;
         }
+
         .summary-table .unrealized-row {
             background: #800080;
             color: white;
         }
+
         .data-table {
             width: 100%;
             border-collapse: collapse;
@@ -38,6 +45,7 @@
             background-color: #ffffff;
             font-size: 11px;
         }
+
         .data-table th {
             padding: 5px;
             border: 1px solid #808080;
@@ -45,17 +53,28 @@
             color: white;
             text-align: left;
         }
+
         .data-table td {
             padding: 5px;
             border: 1px solid #808080;
         }
+
         .data-table .right {
             text-align: right;
         }
-        .positive { color: green; font-weight: bold; }
-        .negative { color: red; font-weight: bold; }
+
+        .positive {
+            color: green;
+            font-weight: bold;
+        }
+
+        .negative {
+            color: red;
+            font-weight: bold;
+        }
     </style>
 </head>
+
 <body>
     {% if account_summary_html %}
     <!-- Account Summary Window -->
@@ -68,7 +87,7 @@
         </div>
     </div>
     {% endif %}
-    
+
     <!-- Summary Window -->
     <div class="window">
         <div class="title-bar">
@@ -79,12 +98,12 @@
                 <h3 style="background: #000080; color: white; padding: 5px; margin: 0;">
                     Trading Results ({{ result.currency }})
                 </h3>
-                
+
                 <table>
                     <tr>
                         <td>Period:</td>
                         <td class="value">
-                            {{ result.period.start[:10] if result.period.start else 'N/A' }} - 
+                            {{ result.period.start[:10] if result.period.start else 'N/A' }} -
                             {{ result.period.end[:10] if result.period.end else 'N/A' }}
                         </td>
                     </tr>
@@ -105,57 +124,55 @@
                     <tr">
                         <td><b>Effective Balance (balance + unrealized):</b></td>
                         <td class="value" style="font-weight: bold;">{{ "%.4f"|format(result.effective_balance) }}</td>
-                    </tr>
-                    <tr>
-                        <td><b>Realized PnL:</b></td>
-                        <td class="value {% if result.trading_pnl >= 0 %}positive{% else %}negative{% endif %}">
-                            {{ "%+.4f"|format(result.trading_pnl) }}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Trading Fees:</td>
-                        <td class="value negative">-{{ "%.4f"|format(result.trading_fees) }}</td>
-                    </tr>
-                    <tr>
-                        <td>Funding:</td>
-                        <td class="value">{{ "%+.4f"|format(result.funding_fees) }}</td>
-                    </tr>
-                    <tr>
-                        <td><b>Net Profit (realized):</b></td>
-                        <td class="value {% if result.net_trading_profit >= 0 %}positive{% else %}negative{% endif %}">
-                            {{ "%+.4f"|format(result.net_trading_profit) }}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Total Trades:</td>
-                        <td class="value">{{ result.total_trades }}</td>
-                    </tr>
-                    <tr>
-                        <td>Deposits:</td>
-                        <td class="value">{{ "%.4f"|format(result.deposits) }} ({{ result.deposits_count }} pcs)</td>
-                    </tr>
-                    <tr>
-                        <td>Withdrawals:</td>
-                        <td class="value">{{ "%.4f"|format(result.withdrawals) }} ({{ result.withdrawals_count }} pcs)</td>
-                    </tr>
-                    <tr class="total-row">
-                        <td><b>PROFITABILITY (realized):</b></td>
-                        <td>
-                            <td class="value">{{ "%+.2f"|format(result.total_profit_percent) }}%</td>                                
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><b>PROFITABILITY (with unrealized PnL):</b></td>
-                        <td>
-                            <td class="value">
-                                {{ "%+.2f"|format(result.current_profit_percent_with_unrealized) }}%</td>
-                        </td>
-                    </tr>
+                        </tr>
+                        <tr>
+                            <td><b>Realized PnL:</b></td>
+                            <td class="value {% if result.trading_pnl >= 0 %}positive{% else %}negative{% endif %}">
+                                {{ "%+.4f"|format(result.trading_pnl) }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Trading Fees:</td>
+                            <td class="value negative">-{{ "%.4f"|format(result.trading_fees) }}</td>
+                        </tr>
+                        <tr>
+                            <td>Funding:</td>
+                            <td class="value">{{ "%+.4f"|format(result.funding_fees) }}</td>
+                        </tr>
+                        <tr>
+                            <td><b>Net Profit (realized):</b></td>
+                            <td
+                                class="value {% if result.net_trading_profit >= 0 %}positive{% else %}negative{% endif %}">
+                                {{ "%+.4f"|format(result.net_trading_profit) }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Total Trades:</td>
+                            <td class="value">{{ result.total_trades }}</td>
+                        </tr>
+                        <tr>
+                            <td>Deposits:</td>
+                            <td class="value">{{ "%.4f"|format(result.deposits) }} ({{ result.deposits_count }} pcs)
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Withdrawals:</td>
+                            <td class="value">{{ "%.4f"|format(result.withdrawals) }} ({{ result.withdrawals_count }}
+                                pcs)</td>
+                        </tr>
+                        <tr class="total-row">
+                            <td><b>PROFITABILITY (realized):</b></td>
+                            <td class="value">{{ "%+.2f"|format(result.total_profit_percent) }}%</td>
+                        </tr>
+                        <tr>
+                            <td><b>PROFITABILITY (with unrealized PnL):</b></td>
+                            <td class="value">{{ "%+.2f"|format(result.current_profit_percent_with_unrealized) }}%</td>
+                        </tr>
                 </table>
             </div>
         </div>
     </div>
-    
+
     <!-- Profitability Chart Window -->
     <div class="window">
         <div class="title-bar">
@@ -167,7 +184,7 @@
             </div>
         </div>
     </div>
-    
+
     {% if balance_chart_html %}
     <!-- Balance Chart Window -->
     <div class="window">
@@ -181,7 +198,7 @@
         </div>
     </div>
     {% endif %}
-    
+
     <!-- Breakdown by Type Window -->
     <div class="window">
         <div class="title-bar">
@@ -195,7 +212,7 @@
                     <button class="tab-button" onclick="switchTab(event, 'by-symbol')">By Symbol</button>
                     <button class="tab-button" onclick="switchTab(event, 'cache-info')">Cache Info</button>
                 </div>
-                
+
                 <div id="by-type" class="tab-content active">
                     {% if by_type %}
                     <table class="data-table">
@@ -220,9 +237,11 @@
                     <p>No data available</p>
                     {% endif %}
                 </div>
-                
+
                 <div id="transfers-detail" class="tab-content">
-                    <h4 style="background: #c0c0c0; padding: 5px; margin: 10px 0 5px 0; border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff;">Deposits</h4>
+                    <h4
+                        style="background: #c0c0c0; padding: 5px; margin: 10px 0 5px 0; border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff;">
+                        Deposits</h4>
                     {% if deposits_list %}
                     <table class="data-table">
                         <thead>
@@ -247,8 +266,10 @@
                     {% else %}
                     <p>No deposits found</p>
                     {% endif %}
-                    
-                    <h4 style="background: #c0c0c0; padding: 5px; margin: 15px 0 5px 0; border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff;">Withdrawals</h4>
+
+                    <h4
+                        style="background: #c0c0c0; padding: 5px; margin: 15px 0 5px 0; border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff;">
+                        Withdrawals</h4>
                     {% if withdrawals_list %}
                     <table class="data-table">
                         <thead>
@@ -273,8 +294,10 @@
                     {% else %}
                     <p>No withdrawals found</p>
                     {% endif %}
-                    
-                    <h4 style="background: #c0c0c0; padding: 5px; margin: 15px 0 5px 0; border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff;">Internal Transfers In</h4>
+
+                    <h4
+                        style="background: #c0c0c0; padding: 5px; margin: 15px 0 5px 0; border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff;">
+                        Internal Transfers In</h4>
                     {% if transfer_in_list %}
                     <table class="data-table">
                         <thead>
@@ -297,8 +320,10 @@
                     {% else %}
                     <p>No transfers in found</p>
                     {% endif %}
-                    
-                    <h4 style="background: #c0c0c0; padding: 5px; margin: 15px 0 5px 0; border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff;">Internal Transfers Out</h4>
+
+                    <h4
+                        style="background: #c0c0c0; padding: 5px; margin: 15px 0 5px 0; border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff;">
+                        Internal Transfers Out</h4>
                     {% if transfer_out_list %}
                     <table class="data-table">
                         <thead>
@@ -322,7 +347,7 @@
                     <p>No transfers out found</p>
                     {% endif %}
                 </div>
-                
+
                 <div id="by-symbol" class="tab-content">
                     {% if by_symbol %}
                     <table class="data-table">
@@ -338,7 +363,8 @@
                             {% for symbol, data in by_symbol %}
                             <tr>
                                 <td>{{ symbol }}</td>
-                                <td class="right {% if data.pnl > 0 %}positive{% elif data.pnl < 0 %}negative{% endif %}">
+                                <td
+                                    class="right {% if data.pnl > 0 %}positive{% elif data.pnl < 0 %}negative{% endif %}">
                                     {{ "%+.4f"|format(data.pnl) }}
                                 </td>
                                 <td class="right negative">{{ "%.4f"|format(data.fees) }}</td>
@@ -351,7 +377,7 @@
                     <p>No data available</p>
                     {% endif %}
                 </div>
-                
+
                 <div id="cache-info" class="tab-content">
                     {% if cache_info %}
                     <table class="data-table">
@@ -383,8 +409,8 @@
                             <tr style="background-color: #e0e0e0;">
                                 <td>{{ data_type }} range</td>
                                 <td>
-                                    {{ range_info.oldest[:10] if range_info.oldest else 'N/A' }} - 
-                                    {{ range_info.newest[:10] if range_info.newest else 'N/A' }} 
+                                    {{ range_info.oldest[:10] if range_info.oldest else 'N/A' }} -
+                                    {{ range_info.newest[:10] if range_info.newest else 'N/A' }}
                                     ({{ range_info.count|default(0) }} records)
                                 </td>
                             </tr>
@@ -399,7 +425,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Form Window -->
     <div class="window form-window">
         <div class="title-bar">
@@ -418,20 +444,20 @@
                         <input type="text" name="api_secret" required value="{{ api_secret|default('') }}">
                     </div>
                 </fieldset>
-                
+
                 <fieldset>
                     <legend>Analysis Settings</legend>
                     <div class="form-group">
                         <label>Currency</label>
                         <select name="currency">
-                            <option value="USDT" {% if currency == 'USDT' %}selected{% endif %}>USDT</option>
-                            <option value="USDC" {% if currency == 'USDC' %}selected{% endif %}>USDC</option>
-                            <option value="BTC" {% if currency == 'BTC' %}selected{% endif %}>BTC</option>
-                            <option value="ETH" {% if currency == 'ETH' %}selected{% endif %}>ETH</option>
+                            <option value="USDT" {% if currency=='USDT' %}selected{% endif %}>USDT</option>
+                            <option value="USDC" {% if currency=='USDC' %}selected{% endif %}>USDC</option>
+                            <option value="BTC" {% if currency=='BTC' %}selected{% endif %}>BTC</option>
+                            <option value="ETH" {% if currency=='ETH' %}selected{% endif %}>ETH</option>
                         </select>
                     </div>
                 </fieldset>
-                
+
                 <fieldset>
                     <legend>Time Range (Optional)</legend>
                     <div class="form-group">
@@ -443,7 +469,7 @@
                         <input type="datetime-local" name="end_datetime" value="{{ end_datetime|default('') }}">
                     </div>
                 </fieldset>
-                
+
                 <fieldset>
                     <legend>Data Sync Options</legend>
                     <div class="form-group">
@@ -459,39 +485,40 @@
                         </label>
                     </div>
                 </fieldset>
-                
+
                 <div class="buttons">
                     <button type="submit" name="action" value="analyze">Analyze Again</button>
                     <button type="submit" name="action" value="sync_only">Sync Data Only</button>
                 </div>
-                
+
                 <div class="status-bar">
                     Last analysis: {{ analysis_time|default('N/A') }}
                 </div>
             </form>
         </div>
     </div>
-    
+
     <div style="text-align: center; margin-top: 10px;">
         <a href="/" style="color: white; text-decoration: none;">Back to PnL Tools</a> |
         <a href="/profit" style="color: white; text-decoration: none;">New Analysis</a>
     </div>
-    
+
     <script>
         function switchTab(evt, tabName) {
             var tabcontent = document.getElementsByClassName("tab-content");
             for (var i = 0; i < tabcontent.length; i++) {
                 tabcontent[i].classList.remove("active");
             }
-            
+
             var tabbuttons = document.getElementsByClassName("tab-button");
             for (var i = 0; i < tabbuttons.length; i++) {
                 tabbuttons[i].classList.remove("active");
             }
-            
+
             document.getElementById(tabName).classList.add("active");
             evt.currentTarget.classList.add("active");
         }
     </script>
 </body>
+
 </html>
