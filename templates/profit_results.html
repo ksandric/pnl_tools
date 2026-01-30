@@ -194,6 +194,7 @@
             <div class="tabs-container">
                 <div class="tab-buttons">
                     <button class="tab-button active" onclick="switchTab(event, 'by-type')">By Type</button>
+                    <button class="tab-button" onclick="switchTab(event, 'transfers-detail')">Transfers Detail</button>
                     <button class="tab-button" onclick="switchTab(event, 'by-symbol')">By Symbol</button>
                     <button class="tab-button" onclick="switchTab(event, 'cache-info')">Cache Info</button>
                 </div>
@@ -220,6 +221,108 @@
                     </table>
                     {% else %}
                     <p>No data available</p>
+                    {% endif %}
+                </div>
+                
+                <div id="transfers-detail" class="tab-content">
+                    <h4 style="background: #c0c0c0; padding: 5px; margin: 10px 0 5px 0; border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff;">Deposits</h4>
+                    {% if deposits_list %}
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Currency</th>
+                                <th style="text-align: right;">Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for deposit in deposits_list %}
+                            <tr>
+                                <td>{{ deposit.successAt[:19] if deposit.successAt else 'N/A' }}</td>
+                                <td>{{ deposit.coin }}</td>
+                                <td class="right positive">{{ "%+.8f"|format(deposit.amount|float) }}</td>
+                                <td>{{ deposit.status }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p>No deposits found</p>
+                    {% endif %}
+                    
+                    <h4 style="background: #c0c0c0; padding: 5px; margin: 15px 0 5px 0; border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff;">Withdrawals</h4>
+                    {% if withdrawals_list %}
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Currency</th>
+                                <th style="text-align: right;">Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for withdrawal in withdrawals_list %}
+                            <tr>
+                                <td>{{ withdrawal.updateTime[:19] if withdrawal.updateTime else 'N/A' }}</td>
+                                <td>{{ withdrawal.coin }}</td>
+                                <td class="right negative">{{ "%.8f"|format(withdrawal.amount|float) }}</td>
+                                <td>{{ withdrawal.status }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p>No withdrawals found</p>
+                    {% endif %}
+                    
+                    <h4 style="background: #c0c0c0; padding: 5px; margin: 15px 0 5px 0; border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff;">Internal Transfers In</h4>
+                    {% if transfer_in_list %}
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Currency</th>
+                                <th style="text-align: right;">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transfer in transfer_in_list %}
+                            <tr>
+                                <td>{{ transfer.transactionTime[:19] if transfer.transactionTime else 'N/A' }}</td>
+                                <td>{{ transfer.currency }}</td>
+                                <td class="right positive">{{ "%+.8f"|format(transfer.change|float) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p>No transfers in found</p>
+                    {% endif %}
+                    
+                    <h4 style="background: #c0c0c0; padding: 5px; margin: 15px 0 5px 0; border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff;">Internal Transfers Out</h4>
+                    {% if transfer_out_list %}
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Currency</th>
+                                <th style="text-align: right;">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transfer in transfer_out_list %}
+                            <tr>
+                                <td>{{ transfer.transactionTime[:19] if transfer.transactionTime else 'N/A' }}</td>
+                                <td>{{ transfer.currency }}</td>
+                                <td class="right negative">{{ "%.8f"|format(transfer.change|float) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p>No transfers out found</p>
                     {% endif %}
                 </div>
                 

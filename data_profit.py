@@ -650,7 +650,8 @@ def calculate_profitability_chart(transaction_logs, initial_balance=None):
         "total_withdrawals": total_withdrawals,
         "final_balance": balance_values[-1] if balance_values else 0,
         "final_adjusted_balance": adjusted_balance_values[-1] if adjusted_balance_values else 0,
-        "total_profit_percent": profitability_percent[-1] if profitability_percent else 0
+        "total_profit_percent": profitability_percent[-1] if profitability_percent else 0,
+        "transaction_logs": sorted_logs  # Добавляем исходные логи для детализации
     }
 
 
@@ -820,6 +821,8 @@ def analyze_trading_performance(api_key, api_secret,
         "withdrawals": total_withdrawals,
         "deposits_count": len(deposits),
         "withdrawals_count": len(withdrawals),
+        "deposits_detail": deposits,
+        "withdrawals_detail": withdrawals,
         
         # Доходность
         "total_profit_percent": profitability_data.get("total_profit_percent", 0),

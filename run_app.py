@@ -459,6 +459,21 @@ async def profit_process(
             reverse=True
         )
         
+        # Get detailed transfers data
+        deposits_list = result.get('deposits_detail', [])
+        withdrawals_list = result.get('withdrawals_detail', [])
+        
+        # Get transfer transactions from transaction logs
+        transfer_in_list = []
+        transfer_out_list = []
+        transaction_logs = result.get('profitability_chart', {}).get('transaction_logs', [])
+        for log in transaction_logs:
+            log_type = log.get('type', '')
+            if log_type == 'TRANSFER_IN':
+                transfer_in_list.append(log)
+            elif log_type == 'TRANSFER_OUT':
+                transfer_out_list.append(log)
+        
         return templates.TemplateResponse("profit_results.html", {
             "request": request,
             "result": result,
@@ -467,6 +482,10 @@ async def profit_process(
             "account_summary_html": account_summary_html,
             "by_type": by_type_sorted,
             "by_symbol": by_symbol_sorted,
+            "deposits_list": deposits_list,
+            "withdrawals_list": withdrawals_list,
+            "transfer_in_list": transfer_in_list,
+            "transfer_out_list": transfer_out_list,
             "cache_info": metadata,
             "api_key": api_key,
             "api_secret": api_secret,
