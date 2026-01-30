@@ -355,10 +355,12 @@ async def profit_process_loading(
     api_key: str = Form(...),
     api_secret: str = Form(...),
     currency: str = Form("USDT"),
+    category: str = Form("linear"),
     start_datetime: str = Form(None),
     end_datetime: str = Form(None),
     force_sync: str = Form(None),
     full_reload: str = Form(None),
+    show_symbol_chart: str = Form(None),
     action: str = Form("analyze")
 ):
     """Show loading page for profit analysis"""
@@ -367,10 +369,12 @@ async def profit_process_loading(
         "api_key": api_key,
         "api_secret": api_secret,
         "currency": currency,
+        "category": category,
         "start_datetime": start_datetime or "",
         "end_datetime": end_datetime or "",
         "force_sync": force_sync or "",
         "full_reload": full_reload or "",
+        "show_symbol_chart": show_symbol_chart or "",
         "action": action
     })
 
