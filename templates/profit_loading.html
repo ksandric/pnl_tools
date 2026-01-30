@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>PNL Tools - Loading...</title>
     <link rel="icon" href="/static/computer.ico" type="image/x-icon">
@@ -9,7 +10,7 @@
             text-align: center;
             padding: 40px 20px;
         }
-        
+
         .progress-bar {
             width: 100%;
             height: 20px;
@@ -19,49 +20,80 @@
             margin: 20px 0;
             overflow: hidden;
         }
-        
+
         .progress-fill {
             height: 100%;
             background: linear-gradient(90deg, #000080, #1084d0);
             animation: progress 3s ease-in-out infinite;
             width: 30%;
         }
-        
+
         @keyframes progress {
-            0% { margin-left: -30%; }
-            100% { margin-left: 100%; }
+            0% {
+                margin-left: -30%;
+            }
+
+            100% {
+                margin-left: 100%;
+            }
         }
-        
-        .hourglass {
-            font-size: 48px;
-            animation: spin 2s linear infinite;
-            display: inline-block;
+
+        .cube {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 16px;
+            transform-style: preserve-3d;
+            animation: spin3d 4s linear infinite;
         }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            50% { transform: rotate(180deg); }
-            100% { transform: rotate(180deg); }
+
+        @keyframes spin3d {
+            from {
+                transform: rotateX(0deg) rotateY(0deg);
+            }
+
+            to {
+                transform: rotateX(0deg) rotateY(360deg);
+            }
         }
-        
+
         .loading-text {
             margin-top: 15px;
             font-size: 12px;
         }
-        
+
         .loading-dots::after {
             content: '';
             animation: dots 1.5s steps(4, end) infinite;
         }
-        
+
         @keyframes dots {
-            0%, 20% { content: ''; }
-            40% { content: '.'; }
-            60% { content: '..'; }
-            80%, 100% { content: '...'; }
+
+            0%,
+            20% {
+                content: '';
+            }
+
+            40% {
+                content: '.';
+            }
+
+            60% {
+                content: '..';
+            }
+
+            80%,
+            100% {
+                content: '...';
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="window form-window">
         <div class="title-bar">
@@ -69,13 +101,13 @@
         </div>
         <div class="window-body">
             <div class="loading-container">
-                <div class="hourglass"><img src="/static/computer.ico" alt="Loading"></div>
+                <div class="cube"><img src="/static/computer.ico" alt="Loading"></div>
                 <h2>Analyzing Trading Performance</h2>
-                
+
                 <div class="progress-bar">
                     <div class="progress-fill"></div>
                 </div>
-                
+
                 <div class="loading-text">
                     <p class="loading-dots">Downloading and processing data</p>
                     <p style="color: #808080; font-size: 10px;">
@@ -83,13 +115,13 @@
                     </p>
                 </div>
             </div>
-            
+
             <div class="status-bar">
                 Please wait... | Currency: {{ currency|default('USDT') }}
             </div>
         </div>
     </div>
-    
+
     <form id="hiddenForm" method="POST" action="/profit/process_async" style="display: none;">
         <input type="hidden" name="api_key" value="{{ api_key }}">
         <input type="hidden" name="api_secret" value="{{ api_secret }}">
@@ -100,10 +132,11 @@
         <input type="hidden" name="full_reload" value="{{ full_reload }}">
         <input type="hidden" name="action" value="{{ action }}">
     </form>
-    
+
     <script>
         // Automatically submit the hidden form
         document.getElementById('hiddenForm').submit();
     </script>
 </body>
+
 </html>

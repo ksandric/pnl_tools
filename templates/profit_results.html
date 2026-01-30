@@ -198,6 +198,20 @@
         </div>
     </div>
     {% endif %}
+    
+    {% if symbol_chart_html %}
+    <!-- PnL by Symbol Chart Window -->
+    <div class="window">
+        <div class="title-bar">
+            <div class="title-bar-text">PnL by Symbol Chart</div>
+        </div>
+        <div class="window-body">
+            <div class="graph-container">
+                {{ symbol_chart_html|safe }}
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Breakdown by Type Window -->
     <div class="window">

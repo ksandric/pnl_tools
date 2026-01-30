@@ -74,6 +74,16 @@
                     </div>
                 </fieldset>
                 
+                <fieldset>
+                    <legend>Additional Charts</legend>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" name="show_symbol_chart" value="1" {% if show_symbol_chart %}checked{% endif %}>
+                            Show PnL by Symbol chart (may be heavy for many symbols)
+                        </label>
+                    </div>
+                </fieldset>
+                
                 <div class="buttons">
                     <button type="submit" name="action" value="analyze">Analyze Profitability</button>
                     <button type="submit" name="action" value="sync_only">Sync Data Only</button>

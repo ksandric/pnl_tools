@@ -528,6 +528,74 @@ def calculate_trading_metrics(transaction_logs, category=None):
     return metrics
 
 
+def calculate_pnl_by_symbol(transaction_logs, category=None, currency="USDT"):
+    """Рассчитать накопительный PnL по каждой монете
+    
+    Args:
+        transaction_logs: Список логов транзакций
+        category: Фильтр по категории
+        currency: Фильтр по валюте
+    
+    Returns:
+        dict: {
+            'symbols': [список символов],
+            'data': {
+                'symbol1': {'timestamps': [...], 'pnl': [...]},
+                'symbol2': {'timestamps': [...], 'pnl': [...]}
+            }
+        }
+    """
+    # Фильтруем по категории и валюте
+    filtered_logs = transaction_logs
+    if category:
+        filtered_logs = [log for log in filtered_logs if log.get("category") == category]
+    if currency:
+        filtered_logs = [log for log in filtered_logs if log.get("currency") == currency]
+    
+    # Сортируем по времени
+    sorted_logs = sorted(filtered_logs, key=lambda x: int(x.get("transactionTime", 0)))
+    
+    # Собираем данные по символам
+    symbol_data = defaultdict(lambda: {"timestamps": [], "pnl": [], "cumulative_pnl": 0.0})
+    
+    for log in sorted_logs:
+        log_type = log.get("type", "")
+        symbol = log.get("symbol", "")
+        
+        if not symbol or symbol == "UNKNOWN":
+            continue
+        
+        # Учитываем только торговые операции
+        if log_type in ("TRADE", "SETTLEMENT"):
+            cash_flow = float(log.get("cashFlow", 0) or 0)
+            ts = int(log.get("transactionTime", 0))
+            
+            symbol_data[symbol]["cumulative_pnl"] += cash_flow
+            symbol_data[symbol]["timestamps"].append(datetime.fromtimestamp(ts / 1000, tz=timezone.utc))
+            symbol_data[symbol]["pnl"].append(symbol_data[symbol]["cumulative_pnl"])
+    
+    # Фильтруем символы с минимальным количеством сделок
+    result_data = {}
+    for symbol, data in symbol_data.items():
+        if len(data["timestamps"]) >= 2:  # Минимум 2 точки
+            result_data[symbol] = {
+                "timestamps": data["timestamps"],
+                "pnl": data["pnl"]
+            }
+    
+    # Сортируем символы по абсолютному PnL
+    sorted_symbols = sorted(
+        result_data.items(),
+        key=lambda x: abs(x[1]["pnl"][-1]) if x[1]["pnl"] else 0,
+        reverse=True
+    )
+    
+    return {
+        "symbols": [s[0] for s in sorted_symbols],
+        "data": dict(sorted_symbols)
+    }
+
+
 def calculate_profitability_chart(transaction_logs, currency="USDT", initial_balance=None):
     """Рассчитать данные для графика доходности в %
     
@@ -758,6 +826,9 @@ def analyze_trading_performance(api_key, api_secret,
     # Данные для графика доходности (используем все логи, но фильтруем по currency внутри функции)
     profitability_data = calculate_profitability_chart(transaction_logs, currency=currency)
     
+    # Данные для графика PnL по символам (опционально)
+    pnl_by_symbol_data = calculate_pnl_by_symbol(transaction_logs, category=category, currency=currency)
+    
     # Получаем текущий баланс и unrealized PnL
     current_balance = 0.0
     unrealized_pnl = 0.0
@@ -853,8 +924,9 @@ def analyze_trading_performance(api_key, api_secret,
         # Разбивка по символам
         "by_symbol": {k: dict(v) for k, v in metrics["by_symbol"].items()},
         
-        # Данные для графика
-        "profitability_chart": profitability_data
+        # Данные для графиков
+        "profitability_chart": profitability_data,
+        "pnl_by_symbol_chart": pnl_by_symbol_data
     }
     
     # Вывод результатов

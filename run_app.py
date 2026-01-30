@@ -384,6 +384,7 @@ async def profit_process(
     end_datetime: str = Form(None),
     force_sync: str = Form(None),
     full_reload: str = Form(None),
+    show_symbol_chart: str = Form(None),
     action: str = Form("analyze")
 ):
     """Process profit analysis request"""
@@ -391,6 +392,7 @@ async def profit_process(
         # Parse boolean options
         force_sync_bool = force_sync == "1"
         full_reload_bool = full_reload == "1"
+        show_symbol_chart_bool = show_symbol_chart == "1"
         
         # Parse datetime if provided
         start_dt = None
@@ -494,6 +496,26 @@ async def profit_process(
         
         balance_chart_html = balance_chart.to_html(full_html=False, include_plotlyjs='cdn', config=balance_chart_config) if balance_chart else None
         
+        # Generate PnL by symbol chart (optional)
+        symbol_chart_html = None
+        if show_symbol_chart_bool and result.get('pnl_by_symbol_chart'):
+            symbol_chart = chart.create_pnl_by_symbol_chart(result['pnl_by_symbol_chart'])
+            
+            symbol_chart_config = {
+                'displayModeBar': True,
+                'displaylogo': False,
+                'modeBarButtonsToAdd': ['toImage'],
+                'toImageButtonOptions': {
+                    'format': 'png',
+                    'filename': 'pnl_by_symbol_chart',
+                    'height': 1080,
+                    'width': 1920,
+                    'scale': 2
+                }
+            }
+            
+            symbol_chart_html = symbol_chart.to_html(full_html=False, include_plotlyjs='cdn', config=symbol_chart_config) if symbol_chart else None
+        
         # Load account summary (balance and positions)
         account_summary_html = ""
         try:
@@ -543,6 +565,7 @@ async def profit_process(
             "result": result,
             "profitability_chart_html": profitability_chart_html,
             "balance_chart_html": balance_chart_html,
+            "symbol_chart_html": symbol_chart_html,
             "account_summary_html": account_summary_html,
             "by_type": by_type_sorted,
             "by_symbol": by_symbol_sorted,

@@ -561,6 +561,18 @@ def create_balance_chart(profitability_data):
             dict(
                 type="buttons",
                 direction="left",
+                buttons=[
+                    dict(
+                        args=[{"visible": True}],
+                        label="Показать все",
+                        method="restyle"
+                    ),
+                    dict(
+                        args=[{"visible": "legendonly"}],
+                        label="Скрыть все",
+                        method="restyle"
+                    )
+                ],
                 pad={"r": 10, "t": 10},
                 showactive=False,
                 x=0.0,
@@ -571,4 +583,107 @@ def create_balance_chart(profitability_data):
         ]
     )
 
+    return fig
+
+
+def create_pnl_by_symbol_chart(pnl_by_symbol_data, max_symbols=20):
+    """
+    Создает оптимизированный график накопительного PnL по монетам
+    
+    Args:
+        pnl_by_symbol_data: данные из calculate_pnl_by_symbol()
+        max_symbols: максимальное количество монет для отображения
+    
+    Returns:
+        plotly.graph_objects.Figure
+    """
+    try:
+        import plotly.graph_objects as go
+    except ImportError:
+        print("Установите plotly: pip install plotly")
+        return None
+    
+    if not pnl_by_symbol_data or not pnl_by_symbol_data.get('data'):
+        print("Нет данных для построения графика")
+        return None
+    
+    symbols = pnl_by_symbol_data['symbols'][:max_symbols]
+    data = pnl_by_symbol_data['data']
+    
+    fig = go.Figure()
+    
+    # Используем Scattergl для оптимизации (WebGL rendering)
+    for symbol in symbols:
+        symbol_data = data[symbol]
+        
+        # Определяем цвет линии (зеленый для прибыли, красный для убытка)
+        final_pnl = symbol_data['pnl'][-1] if symbol_data['pnl'] else 0
+        line_color = '#2E7D32' if final_pnl >= 0 else '#C62828'
+        
+        fig.add_trace(go.Scattergl(  # Используем Scattergl вместо Scatter
+            x=symbol_data['timestamps'],
+            y=symbol_data['pnl'],
+            mode='lines',
+            name=f"{symbol} ({final_pnl:+.2f})",
+            line=dict(width=1.5),
+            hovertemplate='<b>%{fullData.name}</b><br>' +
+                          'Время: %{x}<br>' +
+                          'PnL: %{y:.4f}<br>' +
+                          '<extra></extra>',
+            visible='legendonly' if abs(final_pnl) < 10 else True  # Скрываем мелкие по умолчанию
+        ))
+    
+    # Линия нуля
+    fig.add_hline(y=0, line_dash="dash", line_color="gray", line_width=1)
+    
+    fig.update_layout(
+        height=600,
+        xaxis_title="Время (UTC)",
+        yaxis_title="Накопительный PnL",
+        hovermode='closest',  # Используем closest вместо x unified для производительности
+        template='simple_white',
+        title=dict(
+            text=f"PnL по монетам (топ-{len(symbols)})",
+            font=dict(size=14)
+        ),
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=1.02,
+            itemclick='toggle',
+            itemdoubleclick='toggleothers',
+            font=dict(size=10)  # Уменьшаем шрифт легенды
+        ),
+        updatemenus=[
+            dict(
+                type="buttons",
+                direction="left",
+                buttons=[
+                    dict(
+                        args=[{"visible": True}],
+                        label="Показать все",
+                        method="restyle"
+                    ),
+                    dict(
+                        args=[{"visible": "legendonly"}],
+                        label="Скрыть все",
+                        method="restyle"
+                    )
+                ],
+                pad={"r": 10, "t": 10},
+                showactive=False,
+                x=0.0,
+                xanchor="left",
+                y=1.12,
+                yanchor="top"
+            )
+        ],
+        # Оптимизация производительности
+        xaxis=dict(
+            autorange=True,
+            rangeslider=dict(visible=False)  # Отключаем rangeslider для производительности
+        )
+    )
+    
     return fig
