@@ -35,6 +35,15 @@
                             <option value="ETH" {% if currency == 'ETH' %}selected{% endif %}>ETH</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select name="category">
+                            <option value="linear" {% if category == 'linear' %}selected{% endif %}>Linear (USDT Perpetual)</option>
+                            <option value="spot" {% if category == 'spot' %}selected{% endif %}>Spot</option>
+                            <option value="inverse" {% if category == 'inverse' %}selected{% endif %}>Inverse (Coin Margined)</option>
+                            <option value="option" {% if category == 'option' %}selected{% endif %}>Option</option>
+                        </select>
+                    </div>
                 </fieldset>
                 
                 <fieldset>

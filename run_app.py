@@ -359,6 +359,7 @@ async def profit_process(
     api_key: str = Form(...),
     api_secret: str = Form(...),
     currency: str = Form("USDT"),
+    category: str = Form("linear"),
     start_datetime: str = Form(None),
     end_datetime: str = Form(None),
     force_sync: str = Form(None),
@@ -417,6 +418,7 @@ async def profit_process(
                 "api_key": api_key,
                 "api_secret": api_secret,
                 "currency": currency,
+                "category": category,
                 "start_datetime": start_datetime,
                 "end_datetime": end_datetime,
                 "analysis_time": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -428,6 +430,7 @@ async def profit_process(
             start_time=start_dt,
             end_time=end_dt,
             currency=currency,
+            category=category,
             force_sync=force_sync_bool,
             full_reload=full_reload_bool
         )
@@ -531,6 +534,7 @@ async def profit_process(
             "api_key": api_key,
             "api_secret": api_secret,
             "currency": currency,
+            "category": category,
             "start_datetime": start_datetime,
             "end_datetime": end_datetime,
             "analysis_time": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
