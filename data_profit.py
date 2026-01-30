@@ -466,15 +466,22 @@ def filter_data_by_period(data, start_time, end_time, time_field="transactionTim
     return filtered
 
 
-def calculate_trading_metrics(transaction_logs):
+def calculate_trading_metrics(transaction_logs, category=None):
     """Рассчитать метрики торговли из логов транзакций
     
     Args:
         transaction_logs: Список логов транзакций
+        category: Фильтр по категории ('spot', 'linear', 'option', 'inverse', или None для всех)
     
     Returns:
         dict: Метрики торговли
     """
+    # Фильтруем по категории если указано
+    if category:
+        filtered_logs = [log for log in transaction_logs if log.get("category") == category]
+    else:
+        filtered_logs = transaction_logs
+    
     metrics = {
         "trading_pnl": 0.0,       # Реализованный PnL (cashFlow от торговли)
         "trading_fees": 0.0,      # Торговые комиссии
@@ -486,7 +493,7 @@ def calculate_trading_metrics(transaction_logs):
         "by_symbol": defaultdict(lambda: {"pnl": 0.0, "fees": 0.0, "trades": 0})
     }
     
-    for log in transaction_logs:
+    for log in filtered_logs:
         log_type = log.get("type", "")
         symbol = log.get("symbol", "UNKNOWN")
         
@@ -658,6 +665,7 @@ def calculate_profitability_chart(transaction_logs, initial_balance=None):
 def analyze_trading_performance(api_key, api_secret, 
                                 start_time=None, end_time=None,
                                 currency="USDT",
+                                category=None,
                                 force_sync=False,
                                 full_reload=False):
     """Анализировать результаты торгов
@@ -668,6 +676,7 @@ def analyze_trading_performance(api_key, api_secret,
         start_time: Начало периода анализа (datetime или None для всех данных)
         end_time: Конец периода анализа (datetime или None для текущего момента)
         currency: Валюта для анализа
+        category: Фильтр по категории ('spot', 'linear', 'option', 'inverse', или None для всех)
         force_sync: Принудительная синхронизация перед анализом
         full_reload: Полная перезагрузка данных
     
@@ -728,14 +737,14 @@ def analyze_trading_performance(api_key, api_secret,
         period_start = datetime.fromtimestamp(oldest / 1000, tz=timezone.utc) if oldest else None
         period_end = datetime.fromtimestamp(newest / 1000, tz=timezone.utc) if newest else None
     
-    # Рассчитываем метрики
-    metrics = calculate_trading_metrics(transaction_logs)
+    # Рассчитываем метрики с фильтром по категории (для PnL)
+    metrics = calculate_trading_metrics(transaction_logs, category=category)
     
     # Суммируем депозиты и выводы из отдельных эндпоинтов
     total_deposits = sum(float(d.get("amount", 0) or 0) for d in deposits)
     total_withdrawals = sum(float(w.get("amount", 0) or 0) for w in withdrawals)
     
-    # Данные для графика доходности
+    # Данные для графика доходности (используем ВСЕ логи без фильтра для корректного баланса)
     profitability_data = calculate_profitability_chart(transaction_logs)
     
     # Получаем текущий баланс и unrealized PnL
