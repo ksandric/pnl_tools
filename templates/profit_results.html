@@ -96,17 +96,17 @@
                         <td>Current Wallet Balance:</td>
                         <td class="value">{{ "%.4f"|format(result.current_balance) }}</td>
                     </tr>
-                    <tr class="highlight">
+                    <tr>
                         <td><b>Unrealized PnL (open positions):</b></td>
                         <td class="value {% if result.unrealized_pnl >= 0 %}positive{% else %}negative{% endif %}">
                             {{ "%+.4f"|format(result.unrealized_pnl) }}
                         </td>
                     </tr>
-                    <tr class="highlight">
+                    <tr">
                         <td><b>Effective Balance (balance + unrealized):</b></td>
                         <td class="value" style="font-weight: bold;">{{ "%.4f"|format(result.effective_balance) }}</td>
                     </tr>
-                    <tr style="background: #ffffff;">
+                    <tr>
                         <td><b>Realized PnL:</b></td>
                         <td class="value {% if result.trading_pnl >= 0 %}positive{% else %}negative{% endif %}">
                             {{ "%+.4f"|format(result.trading_pnl) }}
@@ -120,7 +120,7 @@
                         <td>Funding:</td>
                         <td class="value">{{ "%+.4f"|format(result.funding_fees) }}</td>
                     </tr>
-                    <tr style="background: #ffffff;">
+                    <tr>
                         <td><b>Net Profit (realized):</b></td>
                         <td class="value {% if result.net_trading_profit >= 0 %}positive{% else %}negative{% endif %}">
                             {{ "%+.4f"|format(result.net_trading_profit) }}
@@ -139,16 +139,16 @@
                         <td class="value">{{ "%.4f"|format(result.withdrawals) }} ({{ result.withdrawals_count }} pcs)</td>
                     </tr>
                     <tr class="total-row">
-                        <td style="padding: 8px;"><b>PROFITABILITY (realized):</b></td>
-                        <td class="value" style="padding: 8px; font-size: 16px;">
+                        <td><b>PROFITABILITY (realized):</b></td>
+                        <td>
                             <span style="color: {% if result.total_profit_percent >= 0 %}lime{% else %}#ff6666{% endif %};">
                                 {{ "%+.2f"|format(result.total_profit_percent) }}%
                             </span>
                         </td>
                     </tr>
-                    <tr class="unrealized-row">
-                        <td style="padding: 8px;"><b>PROFITABILITY (with unrealized PnL):</b></td>
-                        <td class="value" style="padding: 8px; font-size: 16px;">
+                    <tr>
+                        <td><b>PROFITABILITY (with unrealized PnL):</b></td>
+                        <td>
                             <span style="color: {% if result.current_profit_percent_with_unrealized >= 0 %}lime{% else %}#ff6666{% endif %};">
                                 {{ "%+.2f"|format(result.current_profit_percent_with_unrealized) }}%
                             </span>

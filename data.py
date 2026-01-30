@@ -886,7 +886,7 @@ def format_account_summary_html(summary_data):
     
     # Заголовок
     html.append('<div style="margin: 20px 0;">')
-    html.append('<h2 style="color: white; background: linear-gradient(to bottom, #000080, #1084d0); padding: 3px 5px; margin: 0 0 10px 0; font-family: \'MS Sans Serif\', sans-serif;">Сводка по аккаунту</h2>')
+    html.append('<h2>Сводка по аккаунту</h2>')
     
     # Информация об API ключе
     try:
@@ -934,7 +934,7 @@ def format_account_summary_html(summary_data):
         html.append('</div>')
     
     # Сводка по позициям
-    html.append('<h2 style="color: white; background: linear-gradient(to bottom, #000080, #1084d0); padding: 3px 5px; margin: 15px 0 10px 0; font-family: \'MS Sans Serif\', sans-serif;">Сводка по позициям</h2>')
+    html.append('<h3>Сводка по позициям</h3>')
     html.append('<div style="background-color: #c0c0c0; padding: 5px; margin-bottom: 10px; border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff;">')
     
     # Лонги
