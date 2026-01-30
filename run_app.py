@@ -39,9 +39,29 @@ async def main_page(request: Request):
 
 
 @app.get("/profit", response_class=HTMLResponse)
-async def profit_page(request: Request):
-    """Profit analysis page"""
-    return templates.TemplateResponse("profit.html", {"request": request})
+async def profit_page(
+    request: Request,
+    api_key: str = None,
+    api_secret: str = None,
+    currency: str = "USDT",
+    category: str = "linear",
+    start_datetime: str = None,
+    end_datetime: str = None,
+    force_sync: str = None,
+    full_reload: str = None
+):
+    """Profit analysis page with query parameter support"""
+    return templates.TemplateResponse("profit.html", {
+        "request": request,
+        "api_key": api_key or "",
+        "api_secret": api_secret or "",
+        "currency": currency,
+        "category": category,
+        "start_datetime": start_datetime or "",
+        "end_datetime": end_datetime or "",
+        "force_sync": force_sync == "1",
+        "full_reload": full_reload == "1"
+    })
 
 
 @app.post("/process", response_class=HTMLResponse)

@@ -426,75 +426,36 @@
         </div>
     </div>
 
-    <!-- Form Window -->
+    <!-- Quick Actions -->
     <div class="window form-window">
         <div class="title-bar">
-            <div class="title-bar-text">Query Parameters</div>
+            <div class="title-bar-text">Quick Actions</div>
         </div>
         <div class="window-body">
-            <form method="POST" action="/profit/process" id="profitForm">
-                <fieldset>
-                    <legend>API Configuration</legend>
-                    <div class="form-group">
-                        <label>API_KEY <span class="required">*</span></label>
-                        <input type="text" name="api_key" required value="{{ api_key|default('') }}">
-                    </div>
-                    <div class="form-group">
-                        <label>API_SECRET <span class="required">*</span></label>
-                        <input type="text" name="api_secret" required value="{{ api_secret|default('') }}">
-                    </div>
-                </fieldset>
-
-                <fieldset>
-                    <legend>Analysis Settings</legend>
-                    <div class="form-group">
-                        <label>Currency</label>
-                        <select name="currency">
-                            <option value="USDT" {% if currency=='USDT' %}selected{% endif %}>USDT</option>
-                            <option value="USDC" {% if currency=='USDC' %}selected{% endif %}>USDC</option>
-                            <option value="BTC" {% if currency=='BTC' %}selected{% endif %}>BTC</option>
-                            <option value="ETH" {% if currency=='ETH' %}selected{% endif %}>ETH</option>
-                        </select>
-                    </div>
-                </fieldset>
-
-                <fieldset>
-                    <legend>Time Range (Optional)</legend>
-                    <div class="form-group">
-                        <label>Start Date & Time</label>
-                        <input type="datetime-local" name="start_datetime" value="{{ start_datetime|default('') }}">
-                    </div>
-                    <div class="form-group">
-                        <label>End Date & Time</label>
-                        <input type="datetime-local" name="end_datetime" value="{{ end_datetime|default('') }}">
-                    </div>
-                </fieldset>
-
-                <fieldset>
-                    <legend>Data Sync Options</legend>
-                    <div class="form-group">
-                        <label>
-                            <input type="checkbox" name="force_sync" value="1">
-                            Force data sync
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label>
-                            <input type="checkbox" name="full_reload" value="1">
-                            Full reload (2 years)
-                        </label>
-                    </div>
-                </fieldset>
-
-                <div class="buttons">
-                    <button type="submit" name="action" value="analyze">Analyze Again</button>
-                    <button type="submit" name="action" value="sync_only">Sync Data Only</button>
-                </div>
-
-                <div class="status-bar">
+            <div style="padding: 20px; text-align: center;">
+                <p style="margin-bottom: 15px;">Modify analysis parameters:</p>
+                <a href="/profit?api_key={{ api_key|urlencode }}&api_secret={{ api_secret|urlencode }}&currency={{ currency|urlencode }}&category={{ category|default('linear')|urlencode }}&start_datetime={{ start_datetime|urlencode }}&end_datetime={{ end_datetime|urlencode }}" 
+                   style="display: inline-block; padding: 8px 16px; background: #c0c0c0; border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff; text-decoration: none; color: black; margin: 5px;">
+                    📝 Edit Parameters
+                </a>
+                
+                <form method="POST" action="/profit/process" style="display: inline-block; margin: 5px;">
+                    <input type="hidden" name="api_key" value="{{ api_key|default('') }}">
+                    <input type="hidden" name="api_secret" value="{{ api_secret|default('') }}">
+                    <input type="hidden" name="currency" value="{{ currency|default('USDT') }}">
+                    <input type="hidden" name="category" value="{{ category|default('linear') }}">
+                    <input type="hidden" name="start_datetime" value="{{ start_datetime|default('') }}">
+                    <input type="hidden" name="end_datetime" value="{{ end_datetime|default('') }}">
+                    <input type="hidden" name="force_sync" value="1">
+                    <button type="submit" name="action" value="analyze" style="padding: 8px 16px; background: #c0c0c0; border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff; cursor: pointer;">
+                        🔄 Sync & Refresh
+                    </button>
+                </form>
+                
+                <div style="margin-top: 15px; font-size: 11px; color: #808080;">
                     Last analysis: {{ analysis_time|default('N/A') }}
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
